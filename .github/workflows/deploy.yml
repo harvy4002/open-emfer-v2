@@ -1,8 +1,8 @@
 # .github/workflows/deploy.yml
-# GitHub Actions automated CI/CD pipeline matching Constitution Principle VIII.
-# Automatically applies Terraform infrastructure and deploys static frontend assets to AWS.
+# GitHub Actions automated backend-only deployment pipeline matching Constitution Principle VIII.
+# Automatically applies Terraform infrastructure to deploy the serverless AWS API backend.
 
-name: Serverless Telemetry Deploy
+name: Serverless Backend Deploy
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   deploy:
-    name: Provision & Deploy
+    name: Provision Backend API
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Set up Python 3.12 environment (for Lamda packaging validation)
+      # 2. Set up Python 3.12 environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -40,7 +40,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2 # Home AWS region
 
-      # 4b. Bootstrap the S3 Remote State Bucket if it does not exist yet (Principle III / VIII)
+      # 5. Bootstrap the S3 Remote State Bucket if it does not exist yet (Principle III / VIII)
       - name: Bootstrap S3 Remote State Bucket
         run: |
           if ! aws s3api head-bucket --bucket open-emfer-v2-production-tfstate-harvy 2>/dev/null; then
@@ -53,35 +53,9 @@ jobs:
             echo "S3 state bucket already exists."
           fi
 
-      # 5. Initialize and Apply Terraform Configurations
+      # 6. Initialize and Apply Terraform Configurations
       - name: Terraform Init & Apply
-        id: tf
         run: |
           cd tf/
           terraform init
           terraform apply -var="aws_profile=" -auto-approve
-          
-          # Extract outputs dynamically for downstream deployment tasks
-          API_URL=$(terraform output -raw api_gateway_endpoint_url)
-          CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id)
-          S3_BUCKET=$(terraform output -raw s3_bucket_name)
-          
-          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
-          echo "cf_dist_id=$CF_DIST_ID" >> $GITHUB_OUTPUT
-          echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
-
-      # 6. Update frontend JS scripts to dynamically point to production API Gateway (FR-007)
-      - name: Bind Frontend API URL
-        run: |
-          sed -i 's|http://localhost:3000|${{ steps.tf.outputs.api_url }}|g' web/js/app.js
-          sed -i 's|http://localhost:3000|${{ steps.tf.outputs.api_url }}|g' web/js/admin.js
-
-      # 7. Sync frontend static S3/CloudFront website assets
-      - name: Sync Static Assets to S3
-        run: |
-          aws s3 sync web/ s3://${{ steps.tf.outputs.s3_bucket }}/ --delete
-
-      # 8. Invalidate CloudFront CDN Cache to flush edge updates immediately (FR-015)
-      - name: Invalidate CloudFront CDN Cache
-        run: |
-          aws cloudfront create-invalidation --distribution-id ${{ steps.tf.outputs.cf_dist_id }} --paths "/*"

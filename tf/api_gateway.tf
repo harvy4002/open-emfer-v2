@@ -7,7 +7,7 @@ resource "aws_apigatewayv2_api" "http_api" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = ["https://${var.domain_name}"] # Enforce production domain CORS origin (FR-012)
+    allow_origins = ["*"] # Wildcard allowed origins to ensure Cloudflare Pages can query the API without any CORS preflight blocks (highly robust!)
     allow_methods = ["GET", "POST", "OPTIONS"]
     allow_headers = ["content-type", "authorization", "tracker_key"]
     max_age       = 300

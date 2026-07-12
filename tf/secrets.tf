@@ -2,7 +2,7 @@
 # AWS Secrets Manager parameter caches ensuring Constitution Principle V zero hardcoded credentials.
 
 resource "aws_secretsmanager_secret" "secrets" {
-  name                    = "open_emfer_v2_production_vault" # Unique name to bypass scheduled deletion locks
+  name                    = "open_emfer_v2_production_credentials" # Unique name to bypass scheduled deletion locks
   recovery_window_in_days = 0 # Forces immediate cleanup on destroy
 
   tags = {
