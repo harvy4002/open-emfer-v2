@@ -39,6 +39,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2 # Home AWS region
 
+      # 4b. Bootstrap the S3 Remote State Bucket if it does not exist yet (Principle III / VIII)
+      - name: Bootstrap S3 Remote State Bucket
+        run: |
+          if ! aws s3api head-bucket --bucket open-emfer-v2-production-tfstate-harvy 2>/dev/null; then
+            echo "S3 state bucket does not exist. Bootstrapping..."
+            aws s3api create-bucket \
+              --bucket open-emfer-v2-production-tfstate-harvy \
+              --region eu-west-2 \
+              --create-bucket-configuration LocationConstraint=eu-west-2
+          else
+            echo "S3 state bucket already exists."
+          fi
+
       # 5. Initialize and Apply Terraform Configurations
       - name: Terraform Init & Apply
         id: tf

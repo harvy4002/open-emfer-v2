@@ -13,6 +13,13 @@ terraform {
       version = "~> 2.0"
     }
   }
+
+  # S3 Remote State Backend to sync state between your local machine and GitHub Actions (complying with Principle III)
+  backend "s3" {
+    bucket = "open-emfer-v2-production-tfstate-harvy"
+    key    = "production/terraform.tfstate"
+    region = "eu-west-2"
+  }
 }
 
 # Main home provider (e.g. eu-west-2 London)
