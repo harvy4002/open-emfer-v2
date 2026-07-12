@@ -17,13 +17,20 @@ terraform {
 
 # Main home provider (e.g. eu-west-2 London)
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 }
 
 variable "aws_region" {
   type        = string
   default     = "eu-west-2"
   description = "The home AWS region where core serverless, storage, and secrets will be provisioned."
+}
+
+variable "aws_profile" {
+  type        = string
+  default     = "open-emfer"
+  description = "The local AWS CLI named profile used to authenticate Terraform operations."
 }
 
 variable "domain_name" {
