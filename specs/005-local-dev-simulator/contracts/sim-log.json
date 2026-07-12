@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sim Server Console Log",
+  "description": "Schema structure of logged requests printed on the terminal console by sim_server.py.",
+  "type": "object",
+  "properties": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "method": { "type": "string", "enum": ["GET", "POST", "OPTIONS"] },
+    "path": { "type": "string" },
+    "response_code": { "type": "integer" },
+    "payload_json": { "type": "string" }
+  },
+  "required": ["timestamp", "method", "path", "response_code"]
+}

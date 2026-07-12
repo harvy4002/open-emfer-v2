@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Local DB File Schema",
+  "description": "Standard schema for the web_local_db.json file storing transient mock stats.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "object"
+    }
+  }
+}
