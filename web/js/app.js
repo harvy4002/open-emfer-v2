@@ -5,7 +5,7 @@
 
 // Dynamic Host Resolver (FR-006)
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const API_BASE = isLocal ? "http://localhost:3000" : "https://emf.harvinderatwal.com";
+const API_BASE = isLocal ? "http://localhost:3000" : "https://01uy6frz0h.execute-api.eu-west-2.amazonaws.com/prod";
 
 // Extract compact user parameter 'u' (FR-005 / FR-001)
 const urlParams = new URLSearchParams(window.location.search);

@@ -5,7 +5,7 @@
 
 // Dynamic Host Resolver (FR-008)
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const API_BASE = isLocal ? "http://localhost:3000" : "https://emf.harvinderatwal.com";
+const API_BASE = isLocal ? "http://localhost:3000" : "https://01uy6frz0h.execute-api.eu-west-2.amazonaws.com/prod";
 
 // Hardcoded user profiles names mapping (Assumption 4)
 const USER_NAMES = {
