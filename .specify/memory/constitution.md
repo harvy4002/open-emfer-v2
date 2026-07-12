@@ -1,14 +1,12 @@
 <!--
 ### Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- List of modified principles:
-  - None renamed, expanded "Technical Constraints & Standards"
+- Version change: 1.1.0 → 1.2.0
+- List of modified principles: None renamed, added Principle VIII
 - Added sections:
-  - Principle VII: Cost-Optimized Serverless Frontends (S3 & CloudFront Static Sites)
+  - Principle VIII: Fast Feedback Cycles (Local Simulation & Manual API Triggering)
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/constitution-template.md (✅ updated/aligned)
-  - .specify/templates/spec-template.md (✅ updated/aligned)
   - .specify/templates/plan-template.md (✅ updated/aligned)
   - .specify/templates/tasks-template.md (✅ updated/aligned)
 - Follow-up TODOs: None
@@ -49,6 +47,12 @@ To keep hosting costs near zero and maximize load performance on mobile networks
 - Dynamic data interactions, live charts, and administrative manual logging forms MUST query the serverless AWS API Gateway / Lambda backend via browser-native fetch calls.
 - Enforce secure token authentication (`tracker_key`) on all client-initiated mutative API requests.
 
+### VIII. Fast Feedback Cycles (Local Simulation & Manual API Triggering)
+The codebase and design configurations MUST facilitate an ultra-fast developer feedback loop, allowing developers and automated agents to run, test, and debug both frontend static interfaces and backend API endpoints locally without relying on live AWS cloud deployments.
+- **Local API Simulation**: Both backend Lambdas and API Gateway route behaviors must be runnable locally (e.g., using lightweight offline emulation or simple python/go dev servers), enabling manual payload submits and state lookups.
+- **Manual Data Flow Triggering**: Maintain explicit, runnable testing shell scripts (such as custom cURL triggers) and local browser configuration states that can manually inject mock payloads into ingestion endpoints, allowing instant verification of end-to-end data flows locally.
+- **Rationale**: Mitigates downstream integration flaws, drastically decreases developer validation cycle times from minutes/hours of Terraform provisioning to sub-second local iterations, and ensures high operational readiness before production pushes.
+
 ---
 
 ## Technical Constraints & Standards
@@ -77,4 +81,4 @@ To keep hosting costs near zero and maximize load performance on mobile networks
 
 This Constitution supersedes all standard development ad-hoc patterns. Any changes to core principles, tech stacks, or architectural rules require documentation, ratification by the project owner, and updating this file.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-04
+**Version**: 1.2.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-10
