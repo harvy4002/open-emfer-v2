@@ -24,8 +24,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize the Terraform files structure under the `tf/` directory including `tf/main.tf` and `tf/variables.tf`
-- [ ] T002 Configure the AWS providers and the ACM alias provider for `us-east-1` in `tf/main.tf`
+- [x] T001 Initialize the Terraform files structure under the `tf/` directory including `tf/main.tf` and `tf/variables.tf`
+- [x] T002 Configure the AWS providers and the ACM alias provider for `us-east-1` in `tf/main.tf`
 
 ---
 
@@ -35,8 +35,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Provision the single Amazon DynamoDB composite key table in `tf/dynamodb.tf`
-- [ ] T004 [P] Provision the secure AWS Secrets Manager secrets and parameter schemas in `tf/secrets.tf`
+- [x] T003 Provision the single Amazon DynamoDB composite key table in `tf/dynamodb.tf`
+- [x] T004 [P] Provision the secure AWS Secrets Manager secrets and parameter schemas in `tf/secrets.tf`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -50,10 +50,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Create ACM SSL certificate for `emf.harvinderatwal.com` in `tf/main.tf` using the `us-east-1` alias provider
-- [ ] T006 [US1] Provision S3 static website hosting bucket and attach IAM policy in `tf/s3_cloudfront.tf`
-- [ ] T007 [US1] Provision CloudFront distribution mapping to S3 and caching policies in `tf/s3_cloudfront.tf`
-- [ ] T008 [US1] Output the DNS ACM validation records and CloudFront domains in `tf/outputs.tf`
+- [x] T005 [US1] Create ACM SSL certificate for `emf.harvinderatwal.com` in `tf/main.tf` using the `us-east-1` alias provider
+- [x] T006 [US1] Provision S3 static website hosting bucket and attach IAM policy in `tf/s3_cloudfront.tf`
+- [x] T007 [US1] Provision CloudFront distribution mapping to S3 and caching policies in `tf/s3_cloudfront.tf`
+- [x] T008 [US1] Output the DNS ACM validation records and CloudFront domains in `tf/outputs.tf`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -67,11 +67,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Package Python handlers in zip archives using Terraform `archive_file` in `tf/lambda.tf`
-- [ ] T010 [P] [US2] Provision AWS Lambda functions with IAM execution policies in `tf/lambda.tf`
-- [ ] T011 [US2] Provision AWS API Gateway v2 HTTP API with proxy routes in `tf/api_gateway.tf`
-- [ ] T012 [P] [US2] Configure CORS Allowed Origins mapping the production domain in `tf/api_gateway.tf`
-- [ ] T013 [US2] Update frontend JavaScript API endpoint dynamic binding inside `web/js/app.js` and `web/js/admin.js`
+- [x] T009 [US2] Package Python handlers in zip archives using Terraform `archive_file` in `tf/lambda.tf`
+- [x] T010 [P] [US2] Provision AWS Lambda functions with IAM execution policies in `tf/lambda.tf`
+- [x] T011 [US2] Provision AWS API Gateway v2 HTTP API with proxy routes in `tf/api_gateway.tf`
+- [x] T012 [P] [US2] Configure CORS Allowed Origins mapping the production domain in `tf/api_gateway.tf`
+- [x] T013 [US2] Update frontend JavaScript API endpoint dynamic binding inside `web/js/app.js` and `web/js/admin.js`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -85,7 +85,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Write documentation detailing manual Cloudflare CNAME mapping values in `specs/006-production-infrastructure/quickstart.md`
+- [x] T014 [US3] Write documentation detailing manual Cloudflare CNAME mapping values in `specs/006-production-infrastructure/quickstart.md`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -95,8 +95,8 @@
 
 **Purpose**: Code formatting and final validation
 
-- [ ] T015 Run `terraform validate` inside `tf/` to verify provider integrations
-- [ ] T016 [P] Run `ruff check` on Lambda python handlers in `backend/` to ensure PEP 8 compliance
+- [x] T015 Run `terraform validate` inside `tf/` to verify provider integrations
+- [x] T016 [P] Run `ruff check` on Lambda python handlers in `backend/` to ensure PEP 8 compliance
 
 ---
 

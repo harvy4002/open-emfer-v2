@@ -21,3 +21,12 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# Terraform local plugins, states, and logs (Principle III)
+.terraform/
+tf/.terraform/
+*.tfstate*
+*.tfvars
+.terraform.lock.hcl
+tf/.terraform.lock.hcl
+tf/lambda_function_payload.zip
