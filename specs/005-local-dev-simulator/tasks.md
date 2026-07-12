@@ -24,9 +24,9 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize the Python-based API server file skeleton in `backend/sim_server.py`
-- [ ] T002 Initialize the local developer playground HTML file skeleton in `web/simulator.html`
-- [ ] T003 [P] Create the default JSON database schema file in `web/web_local_db.json`
+- [x] T001 Initialize the Python-based API server file skeleton in `backend/sim_server.py`
+- [x] T002 Initialize the local developer playground HTML file skeleton in `web/simulator.html`
+- [x] T003 [P] Create the default JSON database schema file in `web/web_local_db.json`
 
 ---
 
@@ -36,9 +36,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Implement local JSON database reading, bootstrapping, and automatic file creation logic inside `backend/sim_server.py`
-- [ ] T005 [P] Implement options preflight interception and wildcard CORS headers injection in `backend/sim_server.py`
-- [ ] T006 [P] Add CDN stylesheet and script imports for Bulma CSS and Chart.js inside `web/simulator.html`
+- [x] T004 Implement local JSON database reading, bootstrapping, and automatic file creation logic inside `backend/sim_server.py`
+- [x] T005 [P] Implement options preflight interception and wildcard CORS headers injection in `backend/sim_server.py`
+- [x] T006 [P] Add CDN stylesheet and script imports for Bulma CSS and Chart.js inside `web/simulator.html`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -52,8 +52,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement dynamic API host selection (using `localhost:3000` when running locally, and production gate URLs when in the cloud) inside `web/js/app.js` and `web/js/admin.js`
-- [ ] T008 [P] [US1] Write Python-native static file serving commands in `specs/005-local-dev-simulator/quickstart.md`
+- [x] T007 [US1] Implement dynamic API host selection (using `localhost:3000` when running locally, and production gate URLs when in the cloud) inside `web/js/app.js` and `web/js/admin.js`
+- [x] T008 [P] [US1] Write Python-native static file serving commands in `specs/005-local-dev-simulator/quickstart.md`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -67,10 +67,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Implement mock coordinates generator and forms binding for T1000 GPS payloads in `web/simulator.html`
-- [ ] T010 [P] [US2] Implement form controllers for Browan sound decibels and Monzo bank transactions in `web/simulator.html`
-- [ ] T011 [US2] Implement JavaScript event controllers inside `web/js/simulator.js` to capture playground submits and POST JSON to API port 3000
-- [ ] T012 [US2] Implement the live request/response Console Log inspector panel in `web/simulator.html` and `web/js/simulator.js`
+- [x] T009 [US2] Implement mock coordinates generator and forms binding for T1000 GPS payloads in `web/simulator.html`
+- [x] T010 [P] [US2] Implement form controllers for Browan sound decibels and Monzo bank transactions in `web/simulator.html`
+- [x] T011 [US2] Implement JavaScript event controllers inside `web/js/simulator.js` to capture playground submits and POST JSON to API port 3000
+- [x] T012 [US2] Implement the live request/response Console Log inspector panel in `web/simulator.html` and `web/js/simulator.js`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -84,10 +84,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement POST `/beer` route parser to increment individual and combined aggregates and write raw logs to `backend/sim_server.py`
-- [ ] T014 [US3] Implement POST `/sensecap` and `/browan` route parsers, Haversine step-proxy solvers, and 20-entry history array bounds in `backend/sim_server.py`
-- [ ] T015 [US3] Implement POST `/monzo` background synchronization mock route in `backend/sim_server.py`
-- [ ] T016 [US3] Implement GET `/beer`, GET `/history`, and GET `/monzo` read routes fetching from `web/web_local_db.json` inside `backend/sim_server.py`
+- [x] T013 [US3] Implement POST `/beer` route parser to increment individual and combined aggregates and write raw logs to `backend/sim_server.py`
+- [x] T014 [US3] Implement POST `/sensecap` and `/browan` route parsers, Haversine step-proxy solvers, and 20-entry history array bounds in `backend/sim_server.py`
+- [x] T015 [US3] Implement POST `/monzo` background synchronization mock route in `backend/sim_server.py`
+- [x] T016 [US3] Implement GET `/beer`, GET `/history`, and GET `/monzo` read routes fetching from `web/web_local_db.json` inside `backend/sim_server.py`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -97,9 +97,9 @@
 
 **Purpose**: Code formatting and final validation
 
-- [ ] T017 Run python formatting and style checks in `backend/sim_server.py` using ruff
-- [ ] T018 Verify mobile responsiveness and vertical column stackings of `web/simulator.html` down to 320px
-- [ ] T019 [P] Execute full end-to-end data flow validation scenarios defined in `specs/005-local-dev-simulator/quickstart.md`
+- [x] T017 Run python formatting and style checks in `backend/sim_server.py` using ruff
+- [x] T018 Verify mobile responsiveness and vertical column stackings of `web/simulator.html` down to 320px
+- [x] T019 [P] Execute full end-to-end data flow validation scenarios defined in `specs/005-local-dev-simulator/quickstart.md`
 
 ---
 

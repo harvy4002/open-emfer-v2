@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Spec Kit API Simulator Playground</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
+  <style>
+    body {
+      background-color: #161719;
+      color: #d8d9da;
+      font-family: Helvetica, Arial, sans-serif;
+    }
+    .panel-heading {
+      background-color: #2c2f33 !important;
+      color: #ff780a !important;
+      font-weight: bold;
+    }
+    .panel {
+      background-color: #1f2226;
+      border: 1px solid #2c2f33;
+      margin-bottom: 1.5rem;
+    }
+    .button.is-link {
+      background-color: #ff780a;
+      color: white;
+    }
+    .button.is-link:hover {
+      background-color: #e06600;
+    }
+    .console-box {
+      background-color: #0b0c10;
+      color: #39ff14;
+      font-family: monospace;
+      padding: 1rem;
+      border-radius: 4px;
+      height: 250px;
+      overflow-y: auto;
+      border: 1px solid #2c2f33;
+    }
+    .input, .select select {
+      background-color: #2c2f33 !important;
+      color: white !important;
+      border: 1px solid #1f2226 !important;
+    }
+    label {
+      color: #d8d9da !important;
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title has-text-white has-text-centered">EMF V2 Telemetry Simulator</h1>
+      <p class="subtitle has-text-grey has-text-centered">Principle VIII Offline Sandbox Trigger Playground</p>
+      
+      <div class="columns is-multiline">
+        <!-- Target User Picker -->
+        <div class="column is-12">
+          <div class="panel p-4">
+            <div class="field">
+              <label class="label">Active Camper Profile ID (3-4 Chars)</label>
+              <div class="control">
+                <input class="input" type="text" id="simUser" value="ali" maxlength="8" placeholder="ali, hvy..."/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- T1000 GPS/Environmental Ingest -->
+        <div class="column is-6-tablet is-4-desktop">
+          <nav class="panel">
+            <p class="panel-heading">Sensecap T1000 GPS Ingest</p>
+            <div class="p-4">
+              <div class="field">
+                <label class="label">Latitude</label>
+                <input class="input" type="number" step="any" id="t1000Lat" value="51.5074"/>
+              </div>
+              <div class="field">
+                <label class="label">Longitude</label>
+                <input class="input" type="number" step="any" id="t1000Lng" value="-0.1278"/>
+              </div>
+              <div class="field">
+                <label class="label">Temperature (°C)</label>
+                <input class="input" type="number" step="any" id="t1000Temp" value="24.5"/>
+              </div>
+              <div class="field">
+                <label class="label">Light Level (Lux)</label>
+                <input class="input" type="number" id="t1000Light" value="150"/>
+              </div>
+              <button class="button is-link is-fullwidth" onclick="injectT1000()">Inject Telemetry Payload</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Browan Ambient Noise Ingest -->
+        <div class="column is-6-tablet is-4-desktop">
+          <nav class="panel">
+            <p class="panel-heading">Browan Ambient Noise Ingest</p>
+            <div class="p-4">
+              <div class="field">
+                <label class="label">Noise Intensity (dB)</label>
+                <input class="input" type="number" step="any" id="browanDb" value="45.2"/>
+              </div>
+              <div style="height: 195px;"></div> <!-- Spacer -->
+              <button class="button is-link is-fullwidth" onclick="injectBrowan()">Inject Sound Payload</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Monzo Sync Ingestion -->
+        <div class="column is-12-tablet is-4-desktop">
+          <nav class="panel">
+            <p class="panel-heading">Monzo Bank Sync Cron (Simulated)</p>
+            <div class="p-4">
+              <div class="field">
+                <label class="label">Transaction Amount (GBP)</label>
+                <input class="input" type="number" step="any" id="monzoAmount" value="-4.50"/>
+              </div>
+              <div class="field">
+                <label class="label">Merchant/Description</label>
+                <input class="input" type="text" id="monzoDesc" value="EMF Camp Bar"/>
+              </div>
+              <div style="height: 122px;"></div> <!-- Spacer -->
+              <button class="button is-link is-fullwidth" onclick="injectMonzo()">Simulate Cron Sync</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Request/Response Logger Panel (FR-003) -->
+        <div class="column is-12">
+          <h2 class="subtitle has-text-white mb-2">Live HTTP Console Inspector Log (Port 3000)</h2>
+          <div class="console-box" id="consoleBox">>> Simulator Console initialized. Standby for triggers...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="/js/simulator.js"></script>
+</body>
+</html>

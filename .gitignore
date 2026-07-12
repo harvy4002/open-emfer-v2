@@ -12,3 +12,12 @@ Thumbs.db
 
 # VS Code local settings if environment-specific
 .vscode/settings.json
+
+# Python local runtime files
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+build/

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Participant Logging Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
+  <style>
+    body {
+      background-color: #161719;
+      color: #d8d9da;
+      font-family: Helvetica, Arial, sans-serif;
+      margin-bottom: 5rem;
+    }
+    .panel-heading {
+      background-color: #2c2f33 !important;
+      color: #ff780a !important;
+      font-weight: bold;
+    }
+    .panel {
+      background-color: #1f2226;
+      border: 1px solid #2c2f33;
+      margin-bottom: 1rem;
+    }
+    /* Touch Target Usability (FR-008: min height 48px) */
+    .button.touch-btn {
+      height: 48px !important;
+      font-weight: bold;
+      margin: 0.25rem 0;
+    }
+    .is-purple {
+      background-color: purple !important;
+      color: white !important;
+    }
+    .is-plum {
+      background-color: plum !important;
+      color: black !important;
+    }
+    .is-coral {
+      background-color: coral !important;
+      color: black !important;
+    }
+    .is-firebrick {
+      background-color: firebrick !important;
+      color: white !important;
+    }
+    .input, .select select {
+      background-color: #2c2f33 !important;
+      color: white !important;
+      border: 1px solid #1f2226 !important;
+      height: 48px !important;
+    }
+    label {
+      color: #d8d9da !important;
+    }
+    #response {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 0.5rem;
+      z-index: 1000;
+      font-weight: bold;
+    }
+    #response.success {
+      background-color: #56a64b;
+      color: white;
+    }
+    #response.error {
+      background-color: #e02f44;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="response"></div>
+
+  <section class="section">
+    <div class="container">
+      <h1 class="title has-text-white has-text-centered mb-2">Participant Logger Panel</h1>
+      <p class="subtitle has-text-grey has-text-centered mb-4">Mobile-First Field Logging Console</p>
+
+      <!-- Profile Switcher dropdown (FR-006) -->
+      <div class="panel p-4 mb-4">
+        <div class="field">
+          <label class="label">Logging Profile Context</label>
+          <div class="control is-expanded">
+            <div class="select is-fullwidth">
+              <select id="userSelect" onchange="switchProfile()">
+                <option value="ali">Alice (ali)</option>
+                <option value="hvy">Harvy (hvy)</option>
+                <option value="bob">Bob (bob)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-multiline">
+        <!-- Drinks Logging Card -->
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+          <nav class="panel">
+            <p class="panel-heading">Drinks</p>
+            <div class="p-3">
+              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Water')">Water</button>
+              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Coffee')">Coffee</button>
+              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Tea')">Tea</button>
+              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Soft')">Soft</button>
+              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Lager')">Lager 🍺</button>
+              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'IPA')">IPA 🍺</button>
+              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Cider')">Cider 🍺</button>
+              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Ale')">Ale 🍺</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Camper Status Card -->
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+          <nav class="panel">
+            <p class="panel-heading">Status</p>
+            <div class="p-3">
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Chilling')">Chilling</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Roaming')">Roaming</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Drinking')">Drinking</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Eating')">Eating</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Happy')">Happy</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Coding')">Coding</button>
+              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Sleeping')">Sleeping</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Activities Cards -->
+        <div class="column is-12-mobile is-12-tablet is-4-desktop">
+          <!-- Toilet -->
+          <nav class="panel">
+            <p class="panel-heading">Toilet</p>
+            <div class="p-3 columns is-mobile">
+              <div class="column"><button class="button is-info is-fullwidth touch-btn" onclick="submitLog('Toilet', 'Pee')">Pee</button></div>
+              <div class="column"><button class="button is-info is-fullwidth touch-btn" onclick="submitLog('Toilet', 'Poo')">Poo</button></div>
+            </div>
+          </nav>
+
+          <!-- Lecture -->
+          <nav class="panel">
+            <p class="panel-heading">Lecture</p>
+            <div class="p-3 columns is-mobile">
+              <div class="column"><button class="button is-success is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Start')">Start</button></div>
+              <div class="column"><button class="button is-success is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Stop')">Stop</button></div>
+            </div>
+          </nav>
+
+          <!-- Reset Day -->
+          <nav class="panel mt-4">
+            <div class="p-3">
+              <button class="button is-danger is-fullwidth touch-btn" onclick="triggerReset()">Reset Camper Day</button>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reverse logging toggle footer-card -->
+  <footer class="footer p-3 is-fixed-bottom" style="position: fixed; bottom: 0; left: 0; right: 0; background-color: #2c2f33; text-align: center; height: 70px; z-index: 999;">
+    <div class="field is-grouped is-grouped-centered align-items-center">
+      <label class="checkbox" style="font-size: 1.2rem; font-weight: bold; padding-top: 0.3rem;">
+        <input type="checkbox" id="reverseCheck" style="transform: scale(1.5); margin-right: 0.5rem;"/>
+        Enable Reverse Logging Offset
+      </label>
+    </div>
+  </footer>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

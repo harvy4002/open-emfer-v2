@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>EMF Camper Telemetry Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #161719;
+      color: #d8d9da;
+      font-family: Helvetica, Arial, sans-serif;
+    }
+    .grid-container {
+      margin-top: 1.5rem;
+    }
+    .metric-card {
+      background-color: #1f2226;
+      border: 1px solid #2c2f33;
+      border-radius: 4px;
+      padding: 1.25rem;
+      position: relative;
+      min-height: 150px;
+    }
+    .metric-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: #ff780a;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .metric-value {
+      font-size: 3rem;
+      font-weight: bold;
+      color: white;
+      line-height: 1;
+    }
+    .metric-sub {
+      font-size: 0.9rem;
+      color: #7b8084;
+      margin-top: 0.5rem;
+    }
+    #connection-status-warning {
+      background-color: #e02f44;
+      color: white;
+      text-align: center;
+      padding: 0.5rem;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .badge-active {
+      background-color: #56a64b;
+      color: white;
+    }
+    .badge-offline {
+      background-color: #e02f44;
+      color: white;
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #2c2f33;
+      padding: 0.4rem 0;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Connection Warning Banner (FR-017) -->
+  <div id="connection-status-warning" class="hidden">⚠️ Disconnected / Stale Data: Network API offline or unreachable</div>
+
+  <section class="section">
+    <div class="container">
+      <div class="level mb-4">
+        <div class="level-left">
+          <div>
+            <h1 class="title has-text-white mb-1" id="dashTitle">Alice's Telemetry Dashboard</h1>
+            <p class="subtitle has-text-grey">Grafana-Style Real-time Activity Visualizer</p>
+          </div>
+        </div>
+        <div class="level-right">
+          <span class="status-badge badge-active" id="syncStatus">CONNECTED</span>
+        </div>
+      </div>
+
+      <div class="columns is-multiline grid-container">
+        <!-- Drinks totals panel -->
+        <div class="column is-6-mobile is-4-tablet is-3-desktop">
+          <div class="metric-card">
+            <div class="metric-title">Drinks Intake</div>
+            <div class="metric-value" id="total-drinks-counter">0</div>
+            <div class="metric-sub" id="beer-drinks-counter">Beer subsets: 0</div>
+          </div>
+        </div>
+
+        <!-- Camper Active Status and image (FR-007) -->
+        <div class="column is-6-mobile is-4-tablet is-3-desktop">
+          <div class="metric-card">
+            <div class="metric-title">Camper Activity</div>
+            <div class="metric-value" style="font-size: 2rem;" id="camper-status-badge">Chilling</div>
+            <div class="mt-2" style="max-height: 80px; overflow: hidden; border-radius: 4px;">
+              <img id="camper-status-image" src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=300&q=80" style="width: 100%; object-fit: cover;" alt="Camper status visual"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Walk Steps Counter -->
+        <div class="column is-6-mobile is-4-tablet is-3-desktop">
+          <div class="metric-card">
+            <div class="metric-title">Camper Steps (LoRa)</div>
+            <div class="metric-value" id="stepsVal">0</div>
+            <div class="metric-sub" id="distVal">Distance: 0.00 km</div>
+          </div>
+        </div>
+
+        <!-- Monzo Campaign expenses (FR-001) -->
+        <div class="column is-6-mobile is-12-tablet is-3-desktop">
+          <div class="metric-card">
+            <div class="metric-title">Campsite Expenditure</div>
+            <div class="metric-value" style="color: #ff780a;" id="expenditure-counter">£0.00</div>
+            <div class="metric-sub">Monzo Campaign Balance</div>
+          </div>
+        </div>
+
+        <!-- Historical Temperature line graph panel (individual dashboard only) -->
+        <div class="column is-12-tablet is-6-desktop env-panel">
+          <div class="metric-card">
+            <div class="metric-title">Environmental Temperature (°C)</div>
+            <div style="position: relative; height: 180px;">
+              <canvas id="temperature-chart-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ambient Noise Intensity gauge (individual dashboard only) -->
+        <div class="column is-12-tablet is-6-desktop env-panel">
+          <div class="metric-card">
+            <div class="metric-title">Ambient Noise Level (dB)</div>
+            <div style="position: relative; height: 180px;">
+              <canvas id="noise-chart-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-camper leaderboard card (shows ONLY on combined view) -->
+        <div class="column is-12 hidden" id="leaderboard-panel">
+          <div class="metric-card" style="min-height: 250px;">
+            <div class="metric-title">Active Camper Standing Leaderboard</div>
+            <div id="leaderboard-list" class="mt-3">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
