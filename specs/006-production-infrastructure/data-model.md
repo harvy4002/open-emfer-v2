@@ -21,7 +21,7 @@ In alignment with **Principle IV (Safe and Secure Database Modeling)**, the prod
 
 ## 2. Secrets Manager Payload Mapping
 
-Private credentials required at runtime are stored in an AWS Secrets Manager secret named `open_emfer_v2_production_secrets`:
+Private credentials required at runtime are stored in an AWS Secrets Manager secret named `open_emfer_v2_production_vault`:
 
 ### JSON Object Keys:
 ```json

@@ -15,7 +15,7 @@ This feature delivers the complete Infrastructure-as-Code (IaC) configuration to
 4. **AWS Lambda**: Hosts Python 3.12 runtime logic for `/beer`, `/sensecap`, `/browan`, `/monzo`, and `/history` handlers.
 5. **Amazon DynamoDB**: Operates a single composite-key table for telemetry and aggregates storage.
 6. **AWS Secrets Manager**: Caches and secures Monzo bank OAuth keys and gateway secret parameters.
-7. **Cloudflare External Mapping**: Terraform outputs CNAME and TXT validation records to allow easy manual addition of DNS values to Cloudflare.
+7. **Cloudflare External Mapping**: Terraform outputs CloudFront CNAME, CloudFront ID, and S3 bucket name to allow easy automated CI/CD static syncing and CDN cache invalidations.
 
 ## Technical Context
 
@@ -35,7 +35,7 @@ This feature delivers the complete Infrastructure-as-Code (IaC) configuration to
 
 **Constraints**:
 * Strict IAM least-privilege policies—Lambda roles can only query and write to their designated DynamoDB tables and Secrets Manager records.
-* ACM certificate for CloudFront custom domain MUST be created in the `us-east-1` region (ACM CloudFront requirement).
+* All core AWS resources are hosted natively inside the UK (London) region (`eu-west-2`), ensuring 100% regional data residency.
 * CORS headers strictly defined to only accept the CloudFront domain origin.
 
 **Scale/Scope**: Production-grade camp-wide telemetry pipeline with zero idle cost.
@@ -88,3 +88,4 @@ tf/
 ## Complexity Tracking
 
 *No Constitution violations detected. The serverless, infrastructure-as-code design is 100% compliant with Open EMF Camper architectural parameters.*
+tectural parameters.*
