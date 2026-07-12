@@ -28,6 +28,13 @@ provider "aws" {
   profile = var.aws_profile
 }
 
+# Secondary provider targeting us-east-1 (strictly required for CloudFront SSL ACM certificates, Path B)
+provider "aws" {
+  alias   = "us_east_1"
+  region  = "us-east-1"
+  profile = var.aws_profile
+}
+
 variable "aws_region" {
   type        = string
   default     = "eu-west-2"
@@ -44,4 +51,20 @@ variable "domain_name" {
   type        = string
   default     = "emf.harvinderatwal.com"
   description = "Custom domain used to distribute the static websites and dashboards."
+}
+
+# ACM SSL Certificate for CloudFront custom domain mapping (created in us-east-1, Path B)
+resource "aws_acm_certificate" "cert" {
+  provider          = aws.us_east_1
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Environment = "production"
+    Project     = "open-emfer-v2"
+  }
 }

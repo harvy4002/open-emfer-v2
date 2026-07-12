@@ -1,6 +1,6 @@
-# Quickstart Validation Guide: Production Infrastructure Deployment (Cloudflare Proxy)
+# Quickstart Validation Guide: Production Infrastructure Deployment (AWS ACM SSL)
 
-This guide describes how to run Terraform commands to provision, update, or tear down the production AWS environment, and how to configure CNAME records and Origin Rules in Cloudflare (Path A).
+This guide describes how to run Terraform commands to provision, update, or tear down the production AWS environment, and how to configure CNAME records in Cloudflare (Path B).
 
 ---
 
@@ -26,37 +26,34 @@ Execute the live provisioning command. Confirm with `yes` when prompted:
 terraform apply
 ```
 
-Upon successful completion, Terraform will output your CloudFront CDN endpoint URL.
+Upon successful completion, Terraform will output your CloudFront CNAME values and SSL validation records.
 
 ---
 
-## 3. Cloudflare DNS & Origin Rule Configuration
+## 3. Cloudflare DNS Configuration
 
-Copy the outputs printed on your terminal and configure them in your Cloudflare dashboard:
+Copy the outputs printed on your terminal and add them to your Cloudflare DNS settings:
 
-### Step A: Configure CNAME Record
+### Step A: Configure SSL Validation Record (CNAME)
+To allow AWS Certificate Manager (ACM) to validate ownership of your domain and issue your SSL certificate:
 1. Log in to Cloudflare and open the DNS settings for `harvinderatwal.com`.
 2. Add a new DNS record:
    * **Type**: `CNAME`
-   * **Name**: `emf`
-   * **Target**: Use the output value `cloudfront_domain_name` (e.g., `d12345abcdef.cloudfront.net`)
-   * **Proxy Status**: `Proxied` (Orange Cloud) - This enables Cloudflare's universal SSL on the custom domain.
+   * **Name**: Use the output value `acm_validation_name`
+   * **Target**: Use the output value `acm_validation_value`
+   * **Proxy Status**: `DNS Only` (Grey Cloud) - **Crucial**: Must be un-proxied during initial validation.
 3. Save the record.
 
-### Step B: Configure Cloudflare Origin Rule (Host Header Override)
-Because CloudFront expects the request `Host` header to match the CloudFront distribution domain name (and we did not configure Alternate Domain Names in AWS to keep everything regional in London), we must tell Cloudflare to overwrite the request's Host header when proxying requests to AWS.
+### Step B: Configure Dashboard Domain Mapping (CNAME)
+To point your custom subdomain `emf.harvinderatwal.com` to the CloudFront distribution:
+1. Add a second DNS record:
+   * **Type**: `CNAME`
+   * **Name**: `emf`
+   * **Target**: Use the output value `cloudfront_domain_name` (e.g., `d12345abcdef.cloudfront.net`)
+   * **Proxy Status**: `Proxied` (Orange Cloud) - Enables Cloudflare's edge security.
+2. Save the record.
 
-1. In the Cloudflare left-hand navigation pane, go to **Rules → Origin Rules**.
-2. Click **Create Rule**:
-   * **Rule Name**: `EMF AWS Host Override`
-   * **When incoming requests match... (Field)**: `Hostname`
-   * **Operator**: `equals`
-   * **Value**: `emf.harvinderatwal.com`
-   * **Choose an action... (Host Header)**: Select **Override**
-   * **Value**: Set static value to your CloudFront distribution domain name (e.g. `d12345abcdef.cloudfront.net`, copied from `cloudfront_domain_name` output)
-3. Click **Deploy**.
-
-*Traffic to `https://emf.harvinderatwal.com` will now resolve instantly and securely over HTTPS through Cloudflare to your London-deployed AWS bucket!*
+*Once AWS validates the CNAME (usually takes 5 minutes), your site is fully operational over HTTPS at `https://emf.harvinderatwal.com`!*
 
 ---
 
