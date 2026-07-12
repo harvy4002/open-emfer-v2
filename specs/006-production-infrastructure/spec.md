@@ -74,6 +74,7 @@ As a DevOps engineer, I want to be able to provision, update, and fully tear dow
 - **FR-005 (Secrets Management)**: The system MUST provision an AWS Secrets Manager secret to securely store the `tracker_key` and other sensitive credentials, making them accessible to the Lambda functions at runtime (Principle V).
 - **FR-006 (Custom Domain & SSL)**: The system MUST configure the CloudFront distribution with the custom domain `emf.harvinderatwal.com` and an associated AWS Certificate Manager (ACM) SSL certificate. Since DNS is managed externally in Cloudflare, Terraform MUST output the required DNS validation records (for ACM) and the CloudFront distribution domain name so they can be manually added to Cloudflare.
 - **FR-007 (Frontend API URL Binding)**: The frontend JavaScript MUST be updated/configured to dynamically target the live API Gateway endpoint URL when deployed to production.
+- **FR-008 (CI/CD Automated Deployment)**: The system MUST include a GitHub Actions CI/CD workflow (`.github/workflows/deploy.yml`) triggered on pushes to the `main` branch that automates setting up Terraform, applying AWS resources, syncing frontend static assets (`web/`) to S3, and invalidating CloudFront distribution caches.
 
 ### Key Entities
 

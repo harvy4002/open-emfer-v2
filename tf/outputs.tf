@@ -20,3 +20,13 @@ output "api_gateway_endpoint_url" {
   value       = aws_apigatewayv2_stage.prod.invoke_url
   description = "Live HTTPS production endpoint of your backend API Gateway."
 }
+
+output "cloudfront_distribution_id" {
+  value       = aws_cloudfront_distribution.cdn.id
+  description = "The unique ID of the CloudFront distribution to trigger cache invalidations."
+}
+
+output "s3_bucket_name" {
+  value       = aws_s3_bucket.frontend.id
+  description = "The target Amazon S3 website hosting bucket name."
+}

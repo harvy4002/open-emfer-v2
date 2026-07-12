@@ -1,0 +1,73 @@
+# .github/workflows/deploy.yml
+# GitHub Actions automated CI/CD pipeline matching Constitution Principle VIII.
+# Automatically applies Terraform infrastructure and deploys static frontend assets to AWS.
+
+name: Serverless Telemetry Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Provision & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. Set up Python 3.12 environment (for Lamda packaging validation)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      # 3. Set up HashiCorp Terraform CLI
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.0.2"
+
+      # 4. Configure AWS Credentials from GitHub Repository Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2 # Home AWS region
+
+      # 5. Initialize and Apply Terraform Configurations
+      - name: Terraform Init & Apply
+        id: tf
+        run: |
+          cd tf/
+          terraform init
+          terraform apply -auto-approve
+          
+          # Extract outputs dynamically for downstream deployment tasks
+          API_URL=$(terraform output -raw api_gateway_endpoint_url)
+          CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id)
+          S3_BUCKET=$(terraform output -raw s3_bucket_name)
+          
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "cf_dist_id=$CF_DIST_ID" >> $GITHUB_OUTPUT
+          echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
+
+      # 6. Update frontend JS scripts to dynamically point to production API Gateway (FR-007)
+      - name: Bind Frontend API URL
+        run: |
+          sed -i 's|http://localhost:3000|${{ steps.tf.outputs.api_url }}|g' web/js/app.js
+          sed -i 's|http://localhost:3000|${{ steps.tf.outputs.api_url }}|g' web/js/admin.js
+
+      # 7. Sync frontend static S3/CloudFront website assets
+      - name: Sync Static Assets to S3
+        run: |
+          aws s3 sync web/ s3://${{ steps.tf.outputs.s3_bucket }}/ --delete
+
+      # 8. Invalidate CloudFront CDN Cache to flush edge updates immediately (FR-015)
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ steps.tf.outputs.cf_dist_id }} --paths "/*"
