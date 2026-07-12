@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Device State / Steps GET response",
+  "description": "JSON payload returned when fetching active user step telemetry.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "example": "success"
+    },
+    "cumulative_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "example": 12450
+    },
+    "cumulative_distance_km": {
+      "type": "number",
+      "minimum": 0,
+      "example": 8.12
+    }
+  },
+  "required": ["status", "cumulative_steps", "cumulative_distance_km"]
+}

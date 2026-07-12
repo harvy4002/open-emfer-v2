@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Drinks/Activity Telemetry POST body",
+  "description": "JSON payload submitted to GET /beer to increment/decrement active counts.",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "example": "ali"
+    },
+    "event": {
+      "type": "string",
+      "enum": ["Drinks", "Status", "Toilet", "Lecture", "Workshop", "Volunteering", "Gaming", "Tent", "NewPeople", "Martini", "Reset"],
+      "example": "Drinks"
+    },
+    "type": {
+      "type": "string",
+      "example": "Lager"
+    },
+    "beer": {
+      "type": "boolean",
+      "example": true
+    },
+    "reverse": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, decrements the aggregated count in the DB rather than incrementing.",
+      "example": false
+    }
+  },
+  "required": ["event", "type"]
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Camper Aggregates GET response",
+  "description": "JSON payload returned when fetching active user aggregates.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "example": "success"
+    },
+    "user_id": {
+      "type": "string",
+      "example": "ali"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-07-12T14:30:22.123Z"
+    },
+    "total_drinks": {
+      "type": "integer",
+      "minimum": 0,
+      "example": 5
+    },
+    "beer_drinks": {
+      "type": "integer",
+      "minimum": 0,
+      "example": 4
+    },
+    "categories": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "example": {
+        "Lager": 3,
+        "Water": 1,
+        "Pee": 2
+      }
+    }
+  },
+  "required": ["status", "user_id", "total_drinks", "beer_drinks", "categories"]
+}

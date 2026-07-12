@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Participant Logging Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
@@ -9,7 +10,7 @@
       background-color: #161719;
       color: #d8d9da;
       font-family: Helvetica, Arial, sans-serif;
-      margin-bottom: 5rem;
+      padding-bottom: 2rem;
     }
     .panel-heading {
       background-color: #2c2f33 !important;
@@ -19,31 +20,19 @@
     .panel {
       background-color: #1f2226;
       border: 1px solid #2c2f33;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
-    /* Touch Target Usability (FR-008: min height 48px) */
+    /* Touch Target Usability (FR-004: min height 48px) */
     .button.touch-btn {
       height: 48px !important;
       font-weight: bold;
-      margin: 0.25rem 0;
     }
-    .is-purple {
-      background-color: purple !important;
-      color: white !important;
+    .button.counter-btn {
+      width: 48px !important;
+      height: 48px !important;
+      font-size: 1.25rem !important;
     }
-    .is-plum {
-      background-color: plum !important;
-      color: black !important;
-    }
-    .is-coral {
-      background-color: coral !important;
-      color: black !important;
-    }
-    .is-firebrick {
-      background-color: firebrick !important;
-      color: white !important;
-    }
-    .input, .select select {
+    .input {
       background-color: #2c2f33 !important;
       color: white !important;
       border: 1px solid #1f2226 !important;
@@ -58,17 +47,27 @@
       left: 0;
       right: 0;
       text-align: center;
-      padding: 0.5rem;
+      padding: 0.75rem;
       z-index: 1000;
       font-weight: bold;
     }
     #response.success {
-      background-color: #56a64b;
+      background-color: #2e7d32;
       color: white;
     }
     #response.error {
-      background-color: #e02f44;
+      background-color: #c62828;
       color: white;
+    }
+    .counter-row {
+      background-color: #2c2f33;
+      border: 1px solid #1f2226;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+    }
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
@@ -77,99 +76,277 @@
 
   <section class="section">
     <div class="container">
-      <h1 class="title has-text-white has-text-centered mb-2">Participant Logger Panel</h1>
-      <p class="subtitle has-text-grey has-text-centered mb-4">Mobile-First Field Logging Console</p>
+      <!-- Headers dynamically updated via admin.js (US2 / US3) -->
+      <h1 class="title has-text-white has-text-centered mb-1" id="camperNameHeader">Camper Logging Portal</h1>
+      <p class="subtitle has-text-grey has-text-centered mb-4" id="camperSubHeader">Loading context...</p>
 
-      <!-- Profile Switcher dropdown (FR-006) -->
+      <!-- Tracker Key authorization & cache form (US1 / FR-002) -->
       <div class="panel p-4 mb-4">
         <div class="field">
-          <label class="label">Logging Profile Context</label>
-          <div class="control is-expanded">
-            <div class="select is-fullwidth">
-              <select id="userSelect" onchange="switchProfile()">
-                <option value="ali">Alice (ali)</option>
-                <option value="hvy">Harvy (hvy)</option>
-                <option value="bob">Bob (bob)</option>
-              </select>
+          <label class="label">Admin Key Authentication</label>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input" type="password" id="trackerKeyInput" placeholder="Enter tracker_key secret..."/>
+            </div>
+            <div class="control">
+              <button class="button is-link touch-btn" onclick="saveTrackerKey()">Save Key</button>
             </div>
           </div>
+          <p class="help" id="keyStatus"></p>
         </div>
       </div>
 
+      <!-- Sync live values & Steps display panel (FR-009) -->
       <div class="columns is-multiline">
-        <!-- Drinks Logging Card -->
-        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+        <div class="column is-12">
+          <div class="box p-3 mb-2" style="background-color: #1f2226; border: 1px solid #2c2f33;">
+            <div class="level is-mobile mb-0">
+              <div class="level-left">
+                <div>
+                  <p class="heading has-text-grey mb-1" style="font-size: 0.75rem;">Active Steps Telemetry</p>
+                  <p class="title is-4 has-text-white"><span id="display-steps">0</span> steps</p>
+                </div>
+              </div>
+              <div class="level-right">
+                <button class="button is-info touch-btn" onclick="syncState()">🔄 Sync State</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drinks Logging Card (US4) -->
+        <div class="column is-12-mobile is-6-tablet is-6-desktop">
           <nav class="panel">
-            <p class="panel-heading">Drinks</p>
+            <p class="panel-heading">Drinks Counter</p>
             <div class="p-3">
-              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Water')">Water</button>
-              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Coffee')">Coffee</button>
-              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Tea')">Tea</button>
-              <button class="button is-link is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Soft')">Soft</button>
-              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Lager')">Lager 🍺</button>
-              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'IPA')">IPA 🍺</button>
-              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Cider')">Cider 🍺</button>
-              <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Drinks', 'Ale')">Ale 🍺</button>
+              <!-- Water -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Water 💧</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Water">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Water" onclick="submitLog('Drinks', 'Water', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Water', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coffee -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Coffee ☕</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Coffee">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Coffee" onclick="submitLog('Drinks', 'Coffee', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Coffee', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tea -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Tea 🍵</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Tea">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Tea" onclick="submitLog('Drinks', 'Tea', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Tea', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Soft -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Soft Drink 🥤</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Soft">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Soft" onclick="submitLog('Drinks', 'Soft', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Soft', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lager -->
+              <div class="counter-row" style="border-left: 4px solid #ff780a;">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Lager 🍺</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Lager">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Lager" onclick="submitLog('Drinks', 'Lager', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Lager', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- IPA -->
+              <div class="counter-row" style="border-left: 4px solid #ff780a;">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">IPA 🍺</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-IPA">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-IPA" onclick="submitLog('Drinks', 'IPA', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'IPA', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cider -->
+              <div class="counter-row" style="border-left: 4px solid #ff780a;">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Cider 🍺</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Cider">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Cider" onclick="submitLog('Drinks', 'Cider', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Cider', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ale -->
+              <div class="counter-row" style="border-left: 4px solid #ff780a;">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Ale 🍺</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Ale">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Ale" onclick="submitLog('Drinks', 'Ale', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Drinks', 'Ale', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </nav>
         </div>
 
-        <!-- Camper Status Card -->
-        <div class="column is-12-mobile is-6-tablet is-4-desktop">
-          <nav class="panel">
-            <p class="panel-heading">Status</p>
+        <!-- Camper Status & Activity Cards -->
+        <div class="column is-12-mobile is-6-tablet is-6-desktop">
+          <!-- Status -->
+          <nav class="panel mb-4">
+            <p class="panel-heading">Camper Status</p>
             <div class="p-3">
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Chilling')">Chilling</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Roaming')">Roaming</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Drinking')">Drinking</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Eating')">Eating</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Happy')">Happy</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Coding')">Coding</button>
-              <button class="button is-warning is-fullwidth touch-btn" onclick="submitLog('Status', 'Sleeping')">Sleeping</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Chilling')">Chilling ⛺</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Roaming')">Roaming 🚶</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Drinking')">Drinking 🍹</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Eating')">Eating 🍔</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Happy')">Happy 😄</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Coding')">Coding 💻</button>
+              <button class="button is-warning is-fullwidth touch-btn mb-2" onclick="submitLog('Status', 'Sleeping')">Sleeping 😴</button>
             </div>
           </nav>
-        </div>
 
-        <!-- Activities Cards -->
-        <div class="column is-12-mobile is-12-tablet is-4-desktop">
           <!-- Toilet -->
-          <nav class="panel">
-            <p class="panel-heading">Toilet</p>
-            <div class="p-3 columns is-mobile">
-              <div class="column"><button class="button is-info is-fullwidth touch-btn" onclick="submitLog('Toilet', 'Pee')">Pee</button></div>
-              <div class="column"><button class="button is-info is-fullwidth touch-btn" onclick="submitLog('Toilet', 'Poo')">Poo</button></div>
-            </div>
-          </nav>
-
-          <!-- Lecture -->
-          <nav class="panel">
-            <p class="panel-heading">Lecture</p>
-            <div class="p-3 columns is-mobile">
-              <div class="column"><button class="button is-success is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Start')">Start</button></div>
-              <div class="column"><button class="button is-success is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Stop')">Stop</button></div>
-            </div>
-          </nav>
-
-          <!-- Reset Day -->
-          <nav class="panel mt-4">
+          <nav class="panel mb-4">
+            <p class="panel-heading">Toilet Counter</p>
             <div class="p-3">
-              <button class="button is-danger is-fullwidth touch-btn" onclick="triggerReset()">Reset Camper Day</button>
+              <!-- Pee -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Pee 💧</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Pee">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Pee" onclick="submitLog('Toilet', 'Pee', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Toilet', 'Pee', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Poo -->
+              <div class="counter-row">
+                <div class="level is-mobile mb-0">
+                  <div class="level-left">
+                    <div>
+                      <p class="has-text-white font-weight-bold" style="font-size: 1rem;">Poo 💩</p>
+                      <p class="is-size-7 has-text-grey">Current: <span class="has-text-success has-text-weight-bold" id="count-Poo">0</span></p>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="buttons is-flex-wrap-nowrap mb-0">
+                      <button class="button is-danger counter-btn" id="dec-Poo" onclick="submitLog('Toilet', 'Poo', true)">-</button>
+                      <button class="button is-success counter-btn" onclick="submitLog('Toilet', 'Poo', false)">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          <!-- Lecture Tracker -->
+          <nav class="panel mb-4">
+            <p class="panel-heading">Lecture Session</p>
+            <div class="p-3 columns is-mobile">
+              <div class="column">
+                <button class="button is-success is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Start')">Start ▶</button>
+              </div>
+              <div class="column">
+                <button class="button is-danger is-fullwidth touch-btn" onclick="submitLog('Lecture', 'Stop')">Stop ⏹</button>
+              </div>
+            </div>
+          </nav>
+
+          <!-- Reset Day (FR-001 / Admin Logging forms) -->
+          <nav class="panel">
+            <div class="p-3">
+              <button class="button is-danger is-fullwidth touch-btn" onclick="triggerReset()">Reset Camper Day 🚨</button>
             </div>
           </nav>
         </div>
       </div>
     </div>
   </section>
-
-  <!-- Reverse logging toggle footer-card -->
-  <footer class="footer p-3 is-fixed-bottom" style="position: fixed; bottom: 0; left: 0; right: 0; background-color: #2c2f33; text-align: center; height: 70px; z-index: 999;">
-    <div class="field is-grouped is-grouped-centered align-items-center">
-      <label class="checkbox" style="font-size: 1.2rem; font-weight: bold; padding-top: 0.3rem;">
-        <input type="checkbox" id="reverseCheck" style="transform: scale(1.5); margin-right: 0.5rem;"/>
-        Enable Reverse Logging Offset
-      </label>
-    </div>
-  </footer>
 
   <script src="/js/admin.js"></script>
 </body>

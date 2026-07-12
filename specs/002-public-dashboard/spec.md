@@ -1,4 +1,4 @@
-# Feature Specification: Grafana-Style Public Dashboard and Participant Admin
+# Feature Specification: Grafana-Style Public Dashboard
 
 **Feature Branch**: `002-public-dashboard`
 
@@ -25,22 +25,7 @@ As a camp visitor or attendee, I want to access a public web-based dashboard sty
 
 ---
 
-### User Story 2 - View Backend Participant Admin Dashboard (Priority: P1)
-
-As a tracking participant or admin, I want to access an authenticated backend admin dashboard to manually log activities (drinks, learning sessions, status) and manage the telemetry stream.
-
-**Why this priority**: This is the admin interface for data collection. Without it, manual telemetry data (like drinks consumed or lecture status) can only be sent using manual API client calls.
-
-**Independent Test**: Navigating to `/admin`, entering the `tracker_key` authorization, submitting a new drink payload, and verifying that the backend records the drink and the dashboard counts increment.
-
-**Acceptance Scenarios**:
-
-1. **Given** a tracking participant is on the `/admin` area, **When** they submit a new "Beer" or "Status Update" via the admin forms with a valid `tracker_key`, **Then** the request is sent with the appropriate authorization header and the update is saved.
-2. **Given** an unauthorized visitor tries to access `/admin` actions, **When** they attempt to submit a status update, **Then** they are prompted for or denied via a `401 Unauthorized` API response.
-
----
-
-### User Story 3 - Custom Layout and Panel Toggles (Priority: P3)
+### User Story 2 - Custom Layout and Panel Toggles (Priority: P3)
 
 As a dashboard viewer, I want to toggle between different visualization formats (graphs, progress bars, numeric counters, status badges) for various telemetry metrics so that I can consume the data in different visual styles.
 
@@ -58,24 +43,20 @@ As a dashboard viewer, I want to toggle between different visualization formats 
 
 - **Offline / Stale State**: If the backend API becomes unreachable or returns an error, the dashboard panels must show a clear, user-friendly "Disconnected" or "Stale Data" warning indicator instead of crashing, and resume normal operations once the connection is restored.
 - **Empty Datasets**: If a category has no telemetry data yet (e.g. start of camp), the panels should display `0` or "No data available" gracefully with a placeholder chart, rather than showing blank space or throwing JS errors.
-- **Invalid Admin Key**: If the cached `tracker_key` in the admin area expires or is invalid, all mutative forms should disable submissions and show a prominent authentication error.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001 (Public Display)**: The public dashboard MUST display real-time tracking data including: total drinks, current status (with active image URL), environmental temperature, ambient noise level, and camp expenditure.
-- **FR-002 (Admin Logging Form)**: The admin dashboard MUST provide forms to manually log camper telemetry: posting drinks, changing current status, tracking lecture learning starts/stops, and initiating a tracker reset.
-- **FR-003 (Grafana Aesthetic)**: The public dashboard UI MUST employ a dark-theme, grid-based layout inspired by Grafana, using visual counters, trend lines, and gauge panels for key metrics.
-- **FR-004 (Auto-Refresh)**: The public dashboard MUST automatically refresh its panels at regular, configurable intervals (e.g. every 60 seconds) without requiring a full browser reload.
-- **FR-005 (Admin Authorization)**: The admin dashboard MUST prompt the participant for the `tracker_key` and include it as an authorization header on all mutative requests to the backend API.
-- **FR-006 (Responsive Design)**: The dashboard MUST be fully responsive, leveraging Bulma CSS or pure CSS to adjust panel sizing dynamically from mobile devices to large telemetry displays.
-- **FR-007 (Dashboard Layout)**: The public dashboard MUST utilize a fixed, pre-configured layout optimized for both mobile and desktop screens, structured for future extension into multiple visual presets if additional telemetry fields are added.
+- **FR-002 (Grafana Aesthetic)**: The public dashboard UI MUST employ a dark-theme, grid-based layout inspired by Grafana, using visual counters, trend lines, and gauge panels for key metrics.
+- **FR-003 (Auto-Refresh)**: The public dashboard MUST automatically refresh its panels at regular, configurable intervals (e.g. every 60 seconds) without requiring a full browser reload.
+- **FR-004 (Responsive Design)**: The dashboard MUST be fully responsive, leveraging Bulma CSS or pure CSS to adjust panel sizing dynamically from mobile devices to large telemetry displays.
+- **FR-005 (Dashboard Layout)**: The public dashboard MUST utilize a fixed, pre-configured layout optimized for both mobile and desktop screens, structured for future extension into multiple visual presets if additional telemetry fields are added.
 
 ### Key Entities *(include if feature involves data)*
 
 - **DashboardPanel**: Represents a single visual card on the public dashboard. Key attributes: metric type, chart style (gauge/counter/line), refresh frequency, layout grid coordinates.
-- **AdminSession**: Represents the current participant session in the admin area, caching the `tracker_key` locally.
 
 ## Success Criteria *(mandatory)*
 
@@ -84,10 +65,8 @@ As a dashboard viewer, I want to toggle between different visualization formats 
 - **SC-001**: The public dashboard loads fully and displays all panels in under 2 seconds on a standard mobile connection.
 - **SC-002**: 100% of telemetry panels display correctly with a dark-mode theme and clear visual indicators (no raw JSON exposed on the public dashboard).
 - **SC-003**: Public viewers can access and view all telemetry panels on the public dashboard without being prompted for credentials or keys.
-- **SC-004**: 100% of manual telemetry logs submitted through the admin dashboard are rejected with a 401 Unauthorized unless the correct `tracker_key` is supplied.
 
 ## Assumptions
 
 - **Assumption 1**: The public dashboard is a pure static web app (HTML/CSS/JS) that runs entirely in the browser and calls the existing AWS API Gateway endpoints.
 - **Assumption 2**: Sourcing Grafana-like charting will be accomplished using a lightweight browser-native charting library (e.g., Chart.js or similar via CDN) without introducing complex NPM build pipelines.
-- **Assumption 3**: The `tracker_key` will be stored in the admin user's browser local storage to preserve authentication state across browser sessions.
