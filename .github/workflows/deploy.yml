@@ -45,7 +45,7 @@ jobs:
         run: |
           cd tf/
           terraform init
-          terraform apply -auto-approve
+          terraform apply -var="aws_profile=" -auto-approve
           
           # Extract outputs dynamically for downstream deployment tasks
           API_URL=$(terraform output -raw api_gateway_endpoint_url)
