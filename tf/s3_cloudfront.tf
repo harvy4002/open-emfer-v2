@@ -1,5 +1,5 @@
 # tf/s3_cloudfront.tf
-# Amazon S3 static website hosting and AWS CloudFront global edge distributions fronted by ACM SSL.
+# Amazon S3 static website hosting and AWS CloudFront global edge distributions fronted by CloudFront default SSL.
 
 # S3 website hosting bucket
 resource "aws_s3_bucket" "frontend" {
@@ -49,8 +49,6 @@ resource "aws_s3_bucket_policy" "read" {
 
 # CloudFront edge cache distribution fronting S3 website origin
 resource "aws_cloudfront_distribution" "cdn" {
-  depends_on = [aws_acm_certificate.cert]
-
   origin {
     domain_name = aws_s3_bucket_website_configuration.website.website_endpoint
     origin_id   = "S3WebsiteOrigin"
@@ -66,7 +64,9 @@ resource "aws_cloudfront_distribution" "cdn" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
-  aliases             = [var.domain_name]
+
+  # Path A: DNS custom alias is configured in Cloudflare with host header overrides, 
+  # so CloudFront itself does not require explicit alias domains or custom SSL bindings!
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
@@ -94,10 +94,9 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
   }
 
+  # Rely entirely on CloudFront's free, default, auto-managed wildcard SSL certificate (*.cloudfront.net)
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.cert.arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    cloudfront_default_certificate = true
   }
 
   tags = {

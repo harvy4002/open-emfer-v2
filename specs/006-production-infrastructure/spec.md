@@ -72,7 +72,7 @@ As a DevOps engineer, I want to be able to provision, update, and fully tear dow
 - **FR-003 (Lambda Provisioning)**: The system MUST provision Python 3.12 AWS Lambda functions to handle backend logic, packaging the code from the `backend/` directory, and attach them to the correct API Gateway routes.
 - **FR-004 (DynamoDB Setup)**: The system MUST provision a single Amazon DynamoDB table configured for On-Demand capacity with a composite key structure (`event` as Partition Key, `type` as Sort Key) (Principle IV).
 - **FR-005 (Secrets Management)**: The system MUST provision an AWS Secrets Manager secret to securely store the `tracker_key` and other sensitive credentials, making them accessible to the Lambda functions at runtime (Principle V).
-- **FR-006 (Custom Domain & SSL)**: The system MUST configure the CloudFront distribution with the custom domain `emf.harvinderatwal.com` and an associated AWS Certificate Manager (ACM) SSL certificate. Since DNS is managed externally in Cloudflare, Terraform MUST output the required DNS validation records (for ACM) and the CloudFront distribution domain name so they can be manually added to Cloudflare.
+- **FR-006 (Custom Domain & SSL - Path A)**: The custom domain `emf.harvinderatwal.com` MUST be mapped via Cloudflare Proxied SSL (Full mode) fronting CloudFront's default `*.cloudfront.net` SSL endpoint, leveraging a Cloudflare Origin Rule to override Host headers. This bypasses the need for custom AWS ACM SSL certificates or secondary provider aliases in `us-east-1` entirely, keeping 100% of AWS assets locked inside London (`eu-west-2`).
 - **FR-007 (Frontend API URL Binding)**: The frontend JavaScript MUST be updated/configured to dynamically target the live API Gateway endpoint URL when deployed to production.
 - **FR-008 (CI/CD Automated Deployment)**: The system MUST include a GitHub Actions CI/CD workflow (`.github/workflows/deploy.yml`) triggered on pushes to the `main` branch that automates setting up Terraform, applying AWS resources, syncing frontend static assets (`web/`) to S3, and invalidating CloudFront distribution caches.
 
@@ -92,5 +92,5 @@ As a DevOps engineer, I want to be able to provision, update, and fully tear dow
 
 - **Assumption 1**: The AWS CLI is installed and configured with appropriate administrator credentials on the deployment machine.
 - **Assumption 2**: Terraform is installed on the deployment machine.
-- **Assumption 3**: The required SSL certificate for `emf.harvinderatwal.com` can be provisioned in the `us-east-1` region (required for CloudFront).
-ndon) region (`eu-west-2`) to ensure optimal latency and residency compliance.
+- **Assumption 3**: Custom SSL termination is handled at Cloudflare's edge proxy, eliminating the requirement to provision ACM certificates or associate alternate domain CNAME aliases inside AWS CloudFront.
+- **Assumption 4**: 100% of AWS resources reside strictly in the UK (London) region (`eu-west-2`) to ensure optimal latency and residency compliance.
