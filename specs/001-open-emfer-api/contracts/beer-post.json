@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beer POST Ingestion Contract",
+  "description": "Standard JSON body submitted to the `/beer` endpoint to log drinks or activities.",
+  "type": "object",
+  "properties": {
+    "event": {
+      "type": "string",
+      "enum": ["Drinks", "Status", "Activity", "Reset"],
+      "description": "Main tracking category."
+    },
+    "type": {
+      "type": "string",
+      "description": "Specific subcategory or activity name (e.g., Lager, IPA, Water, Chilling, ResetDay)."
+    },
+    "reverse": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, deducts/reverses the logged event instead of incrementing."
+    }
+  },
+  "required": ["event", "type"]
+}

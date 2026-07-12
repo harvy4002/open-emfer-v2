@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sensecap POST Ingestion Contract",
+  "description": "JSON payload format received from ChirpStack for Sensecap T1000 device.",
+  "type": "object",
+  "properties": {
+    "device_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "latitude": { "type": ["number", "null"] },
+    "longitude": { "type": ["number", "null"] },
+    "temperature": { "type": "number" },
+    "light": { "type": "integer" }
+  },
+  "required": ["device_id", "timestamp", "latitude", "longitude", "temperature", "light"]
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "T1000 Ingestion Request Contract",
+  "description": "Standard JSON body sent from LoRa Network Server (LNS) representing pre-decoded T1000 tracker telemetry.",
+  "type": "object",
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "description": "Unique hardware EUI of the T1000 device.",
+      "pattern": "^eui-[0-9a-fA-F]{16}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp of the measurement."
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": -40.0,
+      "maximum": 80.0,
+      "description": "Ambient temperature in Celsius."
+    },
+    "light": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000,
+      "description": "Light level in lux."
+    },
+    "location": {
+      "type": ["object", "null"],
+      "description": "Geographic coordinates of the device (null if GPS lock is missing).",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180.0,
+          "maximum": 180.0
+        }
+      },
+      "required": ["latitude", "longitude"]
+    }
+  },
+  "required": ["device_id", "timestamp", "temperature", "light", "location"]
+}

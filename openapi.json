@@ -1,0 +1,613 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "open-emfer-http-api",
+    "description": "An API for real-time telemetry, location tracking, environmental data, and spend metrics for an EMF Camp participant.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/beer": {
+      "get": {
+        "summary": "Retrieve Camper Telemetry",
+        "description": "Retrieves real-time counts, status, toilet usage, and reset indicators depending on the requested event parameter.",
+        "operationId": "getBeerTelemetry",
+        "parameters": [
+          {
+            "name": "event",
+            "in": "query",
+            "required": true,
+            "description": "The category of telemetry to retrieve. Maps directly to the event name in DynamoDB (capitalized internally).",
+            "schema": {
+              "type": "string",
+              "enum": ["drinks", "status", "toilet", "tent", "martini"]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "The specific type of the event, e.g., 'latest' to get the single most recent status record.",
+            "schema": {
+              "type": "string",
+              "enum": ["latest"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Telemetry retrieved successfully.",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TelemetryItem"
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/StatusLatestResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-cors": {
+          "allowOrigins": [
+            "http://harvy-emf-backend.s3-website.eu-west-2.amazonaws.com/",
+            "https://harvinder.grafana.net"
+          ],
+          "allowMethods": [
+            "GET", "POST", "OPTIONS"
+          ],
+          "allowHeaders": [
+            "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,tracker_key,TRACKER_KEY"
+          ]
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "HTTP_PROXY",
+          "httpMethod": "GET",
+          "uri": "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/${get_lambda_arn}/invocations",
+          "payloadFormatVersion": 1.0
+        }
+      },
+      "post": {
+        "summary": "Log Telemetry Action",
+        "description": "Submits a telemetry logging event (e.g., drinks, toilet visit, lecture start/stop, reset counts).",
+        "operationId": "postBeerTelemetry",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryPostPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Action stored and aggregated successfully.",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. tracker_key header was missing or incorrect.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Processing exception details returned in message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "HTTP_PROXY",
+          "httpMethod": "POST",
+          "uri": "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/${get_lambda_arn}/invocations",
+          "payloadFormatVersion": 1.0
+        }
+      },
+      "options": {
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "MOCK",
+          "requestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "responses": {
+            "default": {
+              "statusCode": "200",
+              "responseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,tracker_key,TRACKER_KEY'"
+              },
+              "responseTemplates": {
+                "application/json": "{\"statusCode\": 200}"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sensecap": {
+      "get": {
+        "summary": "Get Latest Sensecap Telemetry",
+        "description": "Retrieves the latest physical telemetry metrics logged by the Sensecap T1000 device.",
+        "operationId": "getSensecapLatest",
+        "responses": {
+          "200": {
+            "description": "Latest sensor measurements returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensecapLatestResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Ingest Sensecap/Browan Uplink Payloads",
+        "description": "Ingestion endpoint for ChirpStack webhooks processing uplink telemetry from either the Sensecap T1000 Tracker or the Browan Sound Sensor.",
+        "operationId": "postSensecapUplink",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChirpStackPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payload ingested and parsed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parsing failure or exception details returned in message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/browan": {
+      "get": {
+        "summary": "Get Latest Browan Sound Telemetry",
+        "description": "Retrieves the latest physical acoustic, battery, and temperature telemetry logged by the Browan Sound sensor.",
+        "operationId": "getBrowanLatest",
+        "responses": {
+          "200": {
+            "description": "Latest acoustic sensor metrics returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrowanLatestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/history": {
+      "get": {
+        "summary": "Get Camper Historical Logs",
+        "description": "Retrieves aggregated historical coordinate points, chronological lecture/workshop attendance history, raw database sizes, and active gaming durations.",
+        "operationId": "getCamperHistory",
+        "responses": {
+          "200": {
+            "description": "Historical timeline dataset returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamperHistoryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monzo": {
+      "get": {
+        "summary": "Get Latest Monzo Transactions",
+        "description": "Retrieves the array of recently captured transactions directly from the cached bank balance logs in DynamoDB.",
+        "operationId": "getMonzoTransactions",
+        "responses": {
+          "200": {
+            "description": "Array of recent transactions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MonzoTransactionRecord"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "tracker_key"
+      }
+    },
+    "schemas": {
+      "TelemetryItem": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "example": "Drinks"
+          },
+          "type": {
+            "type": "string",
+            "example": "Lager"
+          },
+          "count": {
+            "type": "integer",
+            "example": 5
+          },
+          "beer": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["event", "type", "count"]
+      },
+      "StatusLatestResponse": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "example": "Status"
+          },
+          "type": {
+            "type": "string",
+            "example": "Latest"
+          },
+          "status": {
+            "type": "string",
+            "example": "Chilling"
+          },
+          "link": {
+            "type": "string",
+            "format": "uri",
+            "example": "http://harvy-emf-frontend.s3-website.eu-west-2.amazonaws.com/harvy_chilling.jpg"
+          }
+        },
+        "required": ["event", "type", "status", "link"]
+      },
+      "TelemetryPostPayload": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": ["Drinks", "Status", "Toilet", "Lecture", "Workshop", "Volunteering", "Gaming", "Tent", "NewPeople", "Martini", "Reset"],
+            "example": "Drinks"
+          },
+          "type": {
+            "type": "string",
+            "description": "Sub-classification representing specific item (e.g. 'Lager', 'Pee', 'Start', 'ResetDay').",
+            "example": "Lager"
+          },
+          "beer": {
+            "type": "boolean",
+            "description": "True if the item logged is a beer.",
+            "example": true
+          },
+          "reverse": {
+            "type": "boolean",
+            "description": "True if the operation should decrement the aggregated total (undo action).",
+            "example": false
+          }
+        },
+        "required": ["event", "type"]
+      },
+      "StandardSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Drinks data stored successfully and aggregate updated."
+          }
+        },
+        "required": ["message"]
+      },
+      "StandardErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Error: Unauthorized"
+          }
+        },
+        "required": ["message"]
+      },
+      "SensecapLatestResponse": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "example": "Sensecap"
+          },
+          "type": {
+            "type": "string",
+            "example": "Latest"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "float",
+            "example": 52.041118
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float",
+            "example": -2.377757
+          },
+          "air_temperature": {
+            "type": "number",
+            "format": "float",
+            "example": 23.6
+          },
+          "light": {
+            "type": "number",
+            "format": "float",
+            "example": 2.0
+          },
+          "battery": {
+            "type": "number",
+            "format": "float",
+            "example": 98.0
+          }
+        },
+        "required": ["event", "type", "latitude", "longitude", "air_temperature", "light", "battery"]
+      },
+      "BrowanLatestResponse": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "example": "Sound"
+          },
+          "type": {
+            "type": "string",
+            "example": "Exact"
+          },
+          "temperature": {
+            "type": "number",
+            "example": 22.0
+          },
+          "soundLevel": {
+            "type": "number",
+            "example": 66.0
+          },
+          "battery": {
+            "type": "number",
+            "example": 2.6
+          }
+        },
+        "required": ["event", "type", "temperature", "soundLevel", "battery"]
+      },
+      "LocationPoint": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "float",
+            "example": 52.041118
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float",
+            "example": -2.377757
+          },
+          "cumulative_distance": {
+            "type": "number",
+            "format": "float",
+            "example": 4.25
+          },
+          "cumulative_steps": {
+            "type": "integer",
+            "example": 6746
+          }
+        },
+        "required": ["latitude", "longitude", "cumulative_distance", "cumulative_steps"]
+      },
+      "HistoricalActivityItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "event", "type", "timestamp"]
+      },
+      "CamperHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocationPoint"
+            }
+          },
+          "lectures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoricalActivityItem"
+            }
+          },
+          "workshops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoricalActivityItem"
+            }
+          },
+          "raw_data_count": {
+            "type": "integer",
+            "example": 142
+          },
+          "gaming_seconds": {
+            "type": "integer",
+            "example": 7200
+          }
+        },
+        "required": ["location", "lectures", "workshops", "raw_data_count", "gaming_seconds"]
+      },
+      "MonzoTransactionRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "adjusted_amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "example": "GBP"
+          },
+          "description": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "amount", "adjusted_amount", "currency", "description", "created", "category"]
+      },
+      "ChirpStackPayload": {
+        "type": "object",
+        "properties": {
+          "deduplicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deviceInfo": {
+            "type": "object",
+            "properties": {
+              "deviceName": {
+                "type": "string",
+                "example": "h01"
+              },
+              "devEui": {
+                "type": "string"
+              }
+            }
+          },
+          "object": {
+            "type": "object"
+          }
+        },
+        "required": ["deduplicationId", "time", "deviceInfo"]
+      }
+    }
+  }
+}

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>EMF Notadmin</title>
+  <style>
+    /* Hide the actual checkbox */
+    #reverse {
+      display: none;
+    }
+
+    /* Create a custom checkbox */
+    .custom-checkbox {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+
+    /* Style the custom checkbox when the actual checkbox is checked */
+    #reverse:checked + .custom-checkbox {
+      background: #000;
+    }
+
+    /* hide element */
+    .hidden {
+      display: none !important;
+    }
+
+    .footer-card {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: grey;
+      padding: 0.5rem;
+      border-top: 1px solid white;
+      text-align: center;
+      line-height: 3rem;
+      vertical-align: middle;
+    }
+
+    .is-purple input {
+      background-color: purple !important;
+      color: white !important;
+    }
+
+    .is-greenyellow input {
+      background-color: greenyellow !important;
+    }
+
+    .is-plum input {
+      background-color: plum !important;
+    }
+
+    .is-coral input {
+      background-color: coral !important;
+    }
+
+    .is-firebrick input {
+      background-color: firebrick !important;
+      color: white !important;
+    }
+
+    #response {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    #response.success {
+      background-color: green;
+      color: white;
+    }
+
+    #response.error {
+      background-color: red;
+      color: white;
+    }
+  </style>
+  <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
+  />
+</head>
+<body>
+<section class="section fixed-grid has-1-cols-mobile has-3-cols-widescreen">
+  <div class="grid">
+    <nav class="panel">
+      <p class="panel-heading">Drinks</p>
+      <form id="drinksForm" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Drinks"/>
+              <input
+                  class="button is-link"
+                  type="submit"
+                  name="type"
+                  value="Water"
+              />
+              <input
+                  class="button is-link"
+                  type="submit"
+                  name="type"
+                  value="Coffee"
+              />
+               <input
+                   class="button is-link"
+                   type="submit"
+                   name="type"
+                   value="Tea"
+               />
+               <input
+                   class="button is-link"
+                   type="submit"
+                   name="type"
+                   value="Soft"
+               />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Lager"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="IPA"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Cider"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Ale"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Stout"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Porter"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Spirits"
+              />
+              <input
+                  class="button is-danger"
+                  type="submit"
+                  name="type"
+                  value="Martini"
+              />
+              <label class="cell is-col-span-2 grid">
+                <input class="input is-link" type="text" name="type"/>
+                <input class="button is-success" type="submit"/>
+              </label>
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Status</p>
+      <form id="statusForm" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Status"/>
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Chilling"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Roaming"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Drinking"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Eating"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Excited"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Bored"
+              />
+              <div
+                  class="button is-info moodExpandedButton"
+                  onclick="toogleMood()"
+              >
+                Show&nbsp;<span class="moodExpandedTest">more</span
+              ><span class="moodExpandedTest hidden">less</span>
+              </div>
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Waking"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Sleeping"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Tired"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Annoyed"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Coffee"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Lecture"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Film"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Dancing"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Shopping"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Gaming"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Workshop"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Happy"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Coding"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Driving"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Wet"
+              />
+              <input
+                  class="button is-warning moodExpandedList hidden"
+                  type="submit"
+                  name="type"
+                  value="Volunteering"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Toilet</p>
+      <form id="toiletForm" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-greenyellow" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Toilet"/>
+              <input
+                  class="button is-info"
+                  type="submit"
+                  name="type"
+                  value="Pee"
+              />
+              <input
+                  class="button is-info"
+                  type="submit"
+                  name="type"
+                  value="Poo"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Lecture</p>
+      <form id="Lecture" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-purple" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Lecture"/>
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Start"
+              />
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Stop"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Workshop</p>
+      <form id="Workshop" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-plum" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Workshop"/>
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Start"
+              />
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Stop"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Workshop</p>
+      <form id="Volunteering" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-plum" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Volunteering"/>
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Start"
+              />
+              <input
+                  class="button is-success"
+                  type="submit"
+                  name="type"
+                  value="Stop"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Gaming</p>
+      <form class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-coral" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Gaming"/>
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Start"
+              />
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Stop"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Tent</p>
+      <form class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-coral" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Tent"/>
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Visit"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">NewPeople</p>
+      <form class="fixed-grid has-2-cols">
+            <span class="grid is-firebrick" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="NewPeople"/>
+              <input
+                  class="button is-warning"
+                  type="submit"
+                  name="type"
+                  value="Talked"
+              />
+            </span>
+      </form>
+    </nav>
+    <nav class="panel">
+      <p class="panel-heading">Martini</p>
+      <form id="martiniForm" class="fixed-grid has-2-cols has-2-cols-mobile">
+            <span class="grid is-greenyellow" style="margin: 0.5rem">
+              <input type="hidden" name="event" value="Martini"/>
+              <input
+                  class="button is-info"
+                  type="submit"
+                  name="type"
+                  value="Approve"
+              />
+              <input
+                  class="button is-info"
+                  type="submit"
+                  name="type"
+                  value="MorePlz"
+              />
+              <input
+                  class="button is-info"
+                  type="submit"
+                  name="type"
+                  value="Disapprove"
+              />
+            </span>
+      </form>
+    </nav>
+  </div>
+</section>
+<section style="margin-bottom: 6rem; text-align: center">
+  <hr/>
+  <form id="resetForm">
+    <input type="hidden" name="event" value="Reset"/>
+    <input
+        class="button is-danger"
+        type="submit"
+        name="type"
+        value="ResetDay"
+    />
+  </form>
+</section>
+<div class="footer-card">
+  <label style="margin-right: 1rem">
+    <input type="checkbox" id="reverse" name="reverse" value="true"/>
+    <span class="custom-checkbox"></span>
+  </label>
+  <button class="button" id="toggleReverse">Toggle Reverse</button>
+</div>
+<div id="response"></div>
+<script>
+  document
+  .getElementById("toggleReverse")
+  .addEventListener("click", function (e) {
+    e.preventDefault();
+
+    var reverseCheckbox = document.getElementById("reverse");
+    reverseCheckbox.checked = !reverseCheckbox.checked;
+  });
+
+  document.querySelectorAll("form").forEach((form) => {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      if (e.submitter.value === "ResetDay") {
+        var confirmation = confirm("Are you sure you want to reset?");
+        if (!confirmation) {
+          return; // If the user clicked "Cancel", stop here
+        }
+      }
+
+      // Clear the response
+      document.getElementById("response").textContent = "";
+
+      var certainValues = ["Lager", "IPA", "Cider"];
+      var beerBoolean = "";
+
+      if (certainValues.includes(e.submitter.value)) {
+        // If it is, set the value of the hidden field
+        beerBoolean = "true";
+      }
+      console.log(certainValues.includes(e.submitter.value));
+
+      var reverse = document.getElementById("reverse").checked;
+
+      const data = {
+        event: form.querySelector('input[type="hidden"]').value,
+        type: e.submitter.value,
+        beer: beerBoolean,
+        reverse: reverse,
+      };
+
+      fetch("https://emf.harvinderatwal.com/beer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          TRACKER_KEY: "yaesh2miRu4aokoa1jo9vah4zoo5ree8",
+        },
+        body: JSON.stringify(data),
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        document.getElementById("response").textContent = "Success";
+        document.getElementById("response").classList.add("success");
+        document.getElementById("response").classList.remove("error");
+      })
+      .catch((error) => {
+        console.log(data);
+        console.error("Error:", error);
+        document.getElementById("response").textContent =
+            JSON.stringify(error);
+        document.getElementById("response").classList.add("error");
+        document.getElementById("response").classList.remove("success");
+      });
+    });
+  });
+
+  function toogleMood() {
+    var elements = document.getElementsByClassName("moodExpandedList");
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].classList.toggle("hidden");
+    }
+
+    var textElements = document.getElementsByClassName("moodExpandedTest");
+    for (var i = 0; i < textElements.length; i++) {
+      textElements[i].classList.toggle("hidden");
+    }
+  }
+</script>
+</body>
+</html>

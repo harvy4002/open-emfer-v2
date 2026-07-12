@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Combined GET Retrieval Contract",
+  "description": "Standard JSON response returned from `GET /beer?user_id=combined`.",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "user_id": { "type": "string", "enum": ["combined"] },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "categories": {
+      "type": "object",
+      "additionalProperties": { "type": "integer" }
+    },
+    "total_drinks": { "type": "integer" },
+    "beer_drinks": { "type": "integer" },
+    "leaderboard": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string" },
+          "display_name": { "type": "string" },
+          "total_drinks": { "type": "integer" }
+        },
+        "required": ["user_id", "display_name", "total_drinks"]
+      }
+    }
+  },
+  "required": ["status", "user_id", "last_updated", "categories", "total_drinks", "beer_drinks", "leaderboard"]
+}

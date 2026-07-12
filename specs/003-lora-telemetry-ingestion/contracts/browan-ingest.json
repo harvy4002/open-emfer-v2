@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Browan Ingestion Request Contract",
+  "description": "Standard JSON body sent from LoRa Network Server (LNS) representing pre-decoded Browan sound level telemetry.",
+  "type": "object",
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "description": "Unique hardware EUI of the Browan device.",
+      "pattern": "^eui-[0-9a-fA-F]{16}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp of the measurement."
+    },
+    "sound_level": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 150.0,
+      "description": "Instantaneous sound intensity level in decibels (dB)."
+    }
+  },
+  "required": ["device_id", "timestamp", "sound_level"]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "History GET Retrieval Contract",
+  "description": "Response schema from `GET /history` returning location tracking sequences.",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "cumulative_distance_km": { "type": "number" },
+    "cumulative_steps": { "type": "integer" },
+    "location_history": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "time": { "type": "string", "format": "date-time" }
+        },
+        "required": ["lat", "lng", "time"]
+      }
+    }
+  },
+  "required": ["status", "cumulative_distance_km", "cumulative_steps", "location_history"]
+}

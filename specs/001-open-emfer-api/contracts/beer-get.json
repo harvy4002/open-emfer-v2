@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beer GET Retrieval Contract",
+  "description": "Standard JSON response returned from `GET /beer?event=drinks`.",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "categories": {
+      "type": "object",
+      "additionalProperties": { "type": "integer" }
+    },
+    "total_drinks": { "type": "integer" },
+    "beer_drinks": { "type": "integer" }
+  },
+  "required": ["status", "last_updated", "categories", "total_drinks", "beer_drinks"]
+}

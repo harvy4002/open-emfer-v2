@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LocalStorage Schemas",
+  "description": "Validation schema constraints for browser local storage preferences.",
+  "type": "object",
+  "properties": {
+    "dashboard_panel_layout": {
+      "type": "object",
+      "properties": {
+        "temperature_widget": { "type": "string", "enum": ["line", "bar"] },
+        "noise_widget": { "type": "string", "enum": ["gauge", "line"] },
+        "refresh_interval_seconds": { "type": "integer", "minimum": 15, "maximum": 3600 }
+      },
+      "required": ["temperature_widget", "noise_widget", "refresh_interval_seconds"]
+    },
+    "admin_tracker_key": {
+      "type": "string",
+      "minLength": 8
+    }
+  },
+  "required": ["dashboard_panel_layout", "admin_tracker_key"]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Monzo GET Retrieval Contract",
+  "description": "Response schema from `GET /monzo` exposing cached expenditure and transactions.",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "total_expenditure_gbp": { "type": "number" },
+    "transactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "amount_gbp": { "type": "number" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "description", "amount_gbp", "timestamp"]
+      }
+    }
+  },
+  "required": ["status", "total_expenditure_gbp", "transactions"]
+}

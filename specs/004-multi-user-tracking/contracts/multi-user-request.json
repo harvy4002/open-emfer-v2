@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Multi-User POST Ingestion Update",
+  "description": "Standard JSON body payload extension supporting isolated user writes.",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 8,
+      "description": "Short identifier mapping to a user profile (e.g. 'ali'). Defaults to 'hvy' if omitted."
+    },
+    "event": {
+      "type": "string",
+      "description": "Main tracking category."
+    },
+    "type": {
+      "type": "string"
+    }
+  },
+  "required": ["event", "type"]
+}

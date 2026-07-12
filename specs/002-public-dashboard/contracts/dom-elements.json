@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DOM Elements Binding Contract",
+  "description": "Standard HTML elements IDs that are required to exist in index.html for app.js rendering.",
+  "type": "object",
+  "properties": {
+    "total-drinks-counter": { "type": "string", "description": "Span/Div displaying overall logged drinks." },
+    "beer-drinks-counter": { "type": "string", "description": "Span/Div displaying subset beer counts." },
+    "camper-status-badge": { "type": "string", "description": "Status text element." },
+    "camper-status-image": { "type": "string", "description": "HTML Image element source displaying current status JPEG." },
+    "expenditure-counter": { "type": "string", "description": "Display area for Monzo totals." },
+    "temperature-chart-canvas": { "type": "string", "description": "HTML5 Canvas element rendering temperature curves." },
+    "noise-chart-canvas": { "type": "string", "description": "HTML5 Canvas element rendering sound levels." },
+    "connection-status-warning": { "type": "string", "description": "Banner element displaying connection stale/unreachable indicators." }
+  },
+  "required": [
+    "total-drinks-counter",
+    "beer-drinks-counter",
+    "camper-status-badge",
+    "camper-status-image",
+    "expenditure-counter",
+    "temperature-chart-canvas",
+    "noise-chart-canvas",
+    "connection-status-warning"
+  ]
+}
