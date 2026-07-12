@@ -67,7 +67,7 @@ As a DevOps engineer, I want to be able to provision, update, and fully tear dow
 
 ### Functional Requirements
 
-- **FR-001 (S3 & CloudFront Frontend)**: The system MUST provision an Amazon S3 bucket configured for static website hosting and an AWS CloudFront distribution to serve the `web/` assets globally over HTTPS (Principle VII).
+- **FR-001 (S3 & CloudFront Frontend)**: The system MUST provision an Amazon S3 bucket configured for static website hosting and an AWS CloudFront distribution to serve the `web/` assets globally over HTTPS (Principle VII). All core regional resources MUST reside in the UK (London) region (`eu-west-2`).
 - **FR-002 (API Gateway)**: The system MUST provision an AWS API Gateway v2 (HTTP API) configured with proper CORS policies allowing requests from the production CloudFront domain (e.g., `emf.harvinderatwal.com`).
 - **FR-003 (Lambda Provisioning)**: The system MUST provision Python 3.12 AWS Lambda functions to handle backend logic, packaging the code from the `backend/` directory, and attach them to the correct API Gateway routes.
 - **FR-004 (DynamoDB Setup)**: The system MUST provision a single Amazon DynamoDB table configured for On-Demand capacity with a composite key structure (`event` as Partition Key, `type` as Sort Key) (Principle IV).
@@ -93,3 +93,4 @@ As a DevOps engineer, I want to be able to provision, update, and fully tear dow
 - **Assumption 1**: The AWS CLI is installed and configured with appropriate administrator credentials on the deployment machine.
 - **Assumption 2**: Terraform is installed on the deployment machine.
 - **Assumption 3**: The required SSL certificate for `emf.harvinderatwal.com` can be provisioned in the `us-east-1` region (required for CloudFront).
+ndon) region (`eu-west-2`) to ensure optimal latency and residency compliance.
