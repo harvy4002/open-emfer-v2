@@ -70,7 +70,7 @@ resource "aws_lambda_function" "api_lambda" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   function_name    = "open_emfer_v2_production_api"
   role             = aws_iam_role.lambda_role.arn
-  handler          = "sim_server.run" # Or entrypoint lambda router
+  handler          = "sim_server.lambda_handler" # Dedicated Lambda entrypoint
   runtime          = "python3.12"
   timeout          = 15
   memory_size      = 256
