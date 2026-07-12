@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Terraform Infrastructure Outputs Contract",
+  "description": "Standard schema for outputs defined in outputs.tf returned after successful terraform apply.",
+  "type": "object",
+  "properties": {
+    "acm_validation_name": {
+      "type": "string",
+      "description": "The DNS CNAME record name required to validate AWS Certificate Manager SSL ownership in Cloudflare."
+    },
+    "acm_validation_value": {
+      "type": "string",
+      "description": "The DNS CNAME target value required to validate AWS Certificate Manager SSL ownership in Cloudflare."
+    },
+    "cloudfront_domain_name": {
+      "type": "string",
+      "description": "The target CloudFront distribution URL (e.g. d12345.cloudfront.net) to be mapped as a CNAME for emf.harvinderatwal.com."
+    },
+    "api_gateway_endpoint_url": {
+      "type": "string",
+      "description": "The live AWS API Gateway endpoint URL (e.g. https://xyz123.execute-api.eu-west-2.amazonaws.com) to be linked to client-side JS."
+    }
+  },
+  "required": [
+    "acm_validation_name",
+    "acm_validation_value",
+    "cloudfront_domain_name",
+    "api_gateway_endpoint_url"
+  ]
+}
