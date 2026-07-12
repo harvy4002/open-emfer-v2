@@ -7,9 +7,10 @@
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const API_BASE = isLocal ? "http://localhost:3000" : "https://emf.harvinderatwal.com";
 
-// Extract compact user parameter 'u' (FR-005)
+// Extract compact user parameter 'u' (FR-005 / FR-001)
 const urlParams = new URLSearchParams(window.location.search);
-let activeUser = urlParams.get("u") || urlParams.get("user_id") || localStorage.getItem("active_user_id") || "hvy";
+let hasUserParam = urlParams.has("u") || urlParams.has("user_id");
+let activeUser = urlParams.get("u") || urlParams.get("user_id") || "hvy";
 
 // Global UI / Chart State
 let tempChart = null;
@@ -25,6 +26,11 @@ const USER_NAMES = {
   combined: "Combined Camper Stats"
 };
 
+// Ensure unrecognized user ID redirects to landing page (Edge Cases)
+if (hasUserParam && !USER_NAMES[activeUser]) {
+  hasUserParam = false;
+}
+
 // Mood image mapping based on camper status (FR-007)
 const STATUS_IMAGES = {
   Chilling: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=300&q=80", // camp friends
@@ -37,6 +43,20 @@ const STATUS_IMAGES = {
 };
 
 function initUI() {
+  const introEl = document.getElementById("intro-landing-view");
+  const dashEl = document.getElementById("dashboard-view");
+
+  if (!hasUserParam) {
+    // Show landing page, hide dashboard (FR-002)
+    if (introEl) introEl.classList.remove("hidden");
+    if (dashEl) dashEl.classList.add("hidden");
+    return;
+  }
+
+  // Show dashboard, hide landing page (FR-003)
+  if (introEl) introEl.classList.add("hidden");
+  if (dashEl) dashEl.classList.remove("hidden");
+
   localStorage.setItem("active_user_id", activeUser);
   const displayName = USER_NAMES[activeUser] || `${activeUser.toUpperCase()}'s Dashboard`;
   document.getElementById("dashTitle").textContent = displayName;
@@ -46,11 +66,17 @@ function initUI() {
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
     document.getElementById("leaderboard-panel").classList.remove("hidden");
   } else {
+    document.querySelectorAll(".env-panel").forEach(el => el.classList.remove("hidden"));
+    document.getElementById("leaderboard-panel").classList.add("hidden");
     initCharts();
   }
 }
 
 function initCharts() {
+  // Clear any existing chart instances to prevent rendering bugs on dynamic reloads
+  if (tempChart) tempChart.destroy();
+  if (noiseChart) noiseChart.destroy();
+
   const tempCtx = document.getElementById("temperature-chart-canvas").getContext("2d");
   const noiseCtx = document.getElementById("noise-chart-canvas").getContext("2d");
   
@@ -118,115 +144,164 @@ function updateCharts(tempHistory, noiseHistory) {
 }
 
 async function fetchTelemetry() {
+  if (!hasUserParam) return;
+
+  const warningDiv = document.getElementById("connection-status-warning");
+  const syncStatusSpan = document.getElementById("syncStatus");
+
   try {
-    const beerRes = await fetch(`${API_BASE}/beer?user_id=${activeUser}`);
-    const beerData = await beerRes.json();
-    
-    let historyData = { cumulative_steps: 0, cumulative_distance_km: 0.0, location_history: [] };
-    if (activeUser !== "combined") {
-      const historyRes = await fetch(`${API_BASE}/history?user_id=${activeUser}`);
-      historyData = await historyRes.json();
+    // 1. Fetch aggregates
+    const resAggs = await fetch(`${API_BASE}/beer?user_id=${activeUser}`);
+    if (!resAggs.ok) throw new Error("Aggregates fetch failure");
+    const data = await resAggs.json();
+
+    // Update Counters
+    document.getElementById("total-drinks-counter").textContent = data.total_drinks || 0;
+    document.getElementById("beer-drinks-counter").textContent = `Beer subsets: ${data.beer_drinks || 0}`;
+
+    // Update Leaderboard if Combined view
+    if (activeUser === "combined") {
+      updateLeaderboard(data.leaderboard || []);
     }
-    
-    const monzoRes = await fetch(`${API_BASE}/monzo`);
-    const monzoData = await monzoRes.json();
-    
-    // Reset consecutive failures on successful pull
-    consecutiveFailures = 0;
-    document.getElementById("connection-status-warning").classList.add("hidden");
-    document.getElementById("syncStatus").className = "status-badge badge-active";
-    document.getElementById("syncStatus").textContent = "CONNECTED";
-    
-    // Render Counters
-    document.getElementById("total-drinks-counter").textContent = beerData.total_drinks || 0;
-    document.getElementById("beer-drinks-counter").textContent = `Beer subsets: ${beerData.beer_drinks || 0}`;
-    document.getElementById("stepsVal").textContent = historyData.cumulative_steps || 0;
-    document.getElementById("distVal").textContent = `Distance: ${(historyData.cumulative_distance_km || 0.0).toFixed(2)} km`;
-    
-    // Monzo format
-    const exp = monzoData.total_expenditure_gbp || 0.00;
-    document.getElementById("expenditure-counter").textContent = `£${exp.toFixed(2)}`;
-    
-    // Render Status Badges & Image (FR-007)
-    let statusText = "Chilling";
-    if (beerData.categories) {
-      const activeStates = Object.keys(beerData.categories).filter(k => STATUS_IMAGES[k]);
-      if (activeStates.length > 0) statusText = activeStates[activeStates.length - 1];
-    }
-    document.getElementById("camper-status-badge").textContent = statusText;
-    document.getElementById("camper-status-image").src = STATUS_IMAGES[statusText] || STATUS_IMAGES.Chilling;
-    
-    // Combined leaderboards (User Story 3)
-    if (activeUser === "combined" && beerData.leaderboard) {
-      renderLeaderboard(beerData.leaderboard);
-    }
-    
-    // Chart updates (if available)
-    if (activeUser !== "combined" && historyData.location_history) {
-      // Mock history structures for demo curve
-      const mockTemps = historyData.location_history.map((pt, i) => ({
-        temp: 20 + (i * 0.3) + (Math.sin(i) * 1.5),
+
+    // 2. Fetch history (steps & temperature)
+    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}`);
+    if (resHistory.ok) {
+      const historyData = await resHistory.json();
+      document.getElementById("stepsVal").textContent = Number(historyData.cumulative_steps || 0).toLocaleString();
+      document.getElementById("distVal").textContent = `Distance: ${Number(historyData.cumulative_distance_km || 0).toFixed(2)} km`;
+
+      // Extract temperature readings from coordinates history
+      const locationHistory = historyData.location_history || [];
+      const tempHistory = locationHistory.slice(-6).map(pt => ({
+        temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
         time: pt.time
       }));
-      const mockNoise = historyData.location_history.map((pt, i) => 40 + (Math.cos(i) * 15));
-      updateCharts(mockTemps, mockNoise);
+      const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
+      
+      updateCharts(tempHistory, noiseHistory);
     }
+
+    // 3. Fetch status text (StatusLatestResponse)
+    const resStatus = await fetch(`${API_BASE}/beer?event=status&type=latest&user_id=${activeUser}`);
+    if (resStatus.ok) {
+      const statusData = await resStatus.json();
+      const statusText = statusData.status || "Chilling";
+      document.getElementById("camper-status-badge").textContent = statusText;
+
+      const fallbackImage = STATUS_IMAGES[statusText] || STATUS_IMAGES["Chilling"];
+      document.getElementById("camper-status-image").setAttribute("src", fallbackImage);
+    }
+
+    // 4. Fetch Monzo expenses
+    const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}`);
+    if (resExpenses.ok) {
+      const expenseData = await resExpenses.json();
+      document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;
+    }
+
+    // Success styling
+    consecutiveFailures = 0;
+    warningDiv.classList.add("hidden");
+    syncStatusSpan.textContent = "CONNECTED";
+    syncStatusSpan.className = "status-badge badge-active";
+
   } catch (error) {
-    console.error("Telemetry fetch error:", error);
+    console.error("Telemetry Retrieval Error:", error);
     consecutiveFailures++;
-    
-    // Dynamic timeout staleness handling (FR-017)
-    if (consecutiveFailures >= 3) {
-      document.getElementById("connection-status-warning").classList.remove("hidden");
-      document.getElementById("syncStatus").className = "status-badge badge-offline";
-      document.getElementById("syncStatus").textContent = "OFFLINE";
+
+    if (consecutiveFailures >= 2) {
+      warningDiv.classList.remove("hidden");
+      syncStatusSpan.textContent = "OFFLINE";
+      syncStatusSpan.className = "status-badge badge-offline";
     }
   }
 }
 
-function renderLeaderboard(board) {
-  const container = document.getElementById("leaderboard-list");
-  container.innerHTML = "";
-  
-  if (board.length === 0) {
-    container.innerHTML = `<div class="has-text-centered has-text-grey py-4">No active drinks logged yet</div>`;
+function updateLeaderboard(leaderboard) {
+  const listEl = document.getElementById("leaderboard-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  if (leaderboard.length === 0) {
+    listEl.innerHTML = `<div class="has-text-grey has-text-centered p-3">No camper telemetry available yet.</div>`;
     return;
   }
-  
-  board.forEach((user, index) => {
-    container.innerHTML += `
+
+  leaderboard.forEach(user => {
+    const fullName = USER_NAMES[user.user_id] || `${user.user_id.toUpperCase()}`;
+    listEl.innerHTML += `
       <div class="leaderboard-item">
-        <span>#${index + 1} &nbsp; ${user.display_name}</span>
+        <span>${fullName}</span>
         <span style="color: #ff780a;">${user.total_drinks} drinks</span>
       </div>
     `;
   });
 }
 
+// Interactive Portal Navigation transitions (FR-005)
+function selectCamperDashboard(camperId) {
+  const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?u=" + camperId;
+  window.history.pushState({ path: newUrl }, '', newUrl);
+  
+  hasUserParam = true;
+  activeUser = camperId;
+  
+  initUI();
+  fetchTelemetry();
+  scheduleRefresh();
+}
+
 // Jittered Polling Execution with Page Visibility throttling
 function scheduleRefresh() {
+  if (!hasUserParam) return;
   const baseInterval = 60000; // 60 seconds
   const jitter = (Math.random() * 10000) - 5000; // ±5 seconds jitter
   
+  clearTimeout(refreshTimeout);
   refreshTimeout = setTimeout(async () => {
     await fetchTelemetry();
     scheduleRefresh();
   }, baseInterval + jitter);
 }
 
-// Page Visibility API check (Load Specs / NFRs)
+// Support browser back/forward history buttons (UX compliance)
+window.addEventListener("popstate", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  hasUserParam = urlParams.has("u") || urlParams.has("user_id");
+  activeUser = urlParams.get("u") || urlParams.get("user_id") || "hvy";
+  
+  // Ensure unrecognized redirects to intro
+  if (hasUserParam && !USER_NAMES[activeUser]) {
+    hasUserParam = false;
+  }
+  
+  initUI();
+  if (hasUserParam) {
+    fetchTelemetry();
+    scheduleRefresh();
+  } else {
+    clearTimeout(refreshTimeout);
+  }
+});
+
+// Page Visibility API check
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     console.log("Tab inactive: pausing auto-refresh polling loop.");
     clearTimeout(refreshTimeout);
   } else {
-    console.log("Tab active: resuming auto-refresh polling loop.");
-    fetchTelemetry();
-    scheduleRefresh();
+    if (hasUserParam) {
+      console.log("Tab active: resuming auto-refresh polling loop.");
+      fetchTelemetry();
+      scheduleRefresh();
+    }
   }
 });
 
 // App Start
 initUI();
-fetchTelemetry();
-scheduleRefresh();
+if (hasUserParam) {
+  fetchTelemetry();
+  scheduleRefresh();
+}

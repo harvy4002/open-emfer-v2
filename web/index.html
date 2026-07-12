@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>EMF Camper Telemetry Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
@@ -74,13 +75,49 @@
     .hidden {
       display: none !important;
     }
+    .button.touch-btn {
+      height: 48px !important;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <!-- Connection Warning Banner (FR-017) -->
   <div id="connection-status-warning" class="hidden">⚠️ Disconnected / Stale Data: Network API offline or unreachable</div>
 
-  <section class="section">
+  <!-- Informational Project Onboarding Landing View (FR-002 / FR-004) -->
+  <section class="section hidden" id="intro-landing-view">
+    <div class="container">
+      <div class="box p-5" style="background-color: #1f2226; border: 1px solid #2c2f33; max-width: 600px; margin: 2rem auto; border-radius: 6px;">
+        <h1 class="title has-text-white has-text-centered mb-2" style="font-size: 2.25rem;">Open EMF Camper</h1>
+        <p class="subtitle has-text-grey has-text-centered mb-5" style="font-size: 1rem;">EMF Camp Real-Time Telemetry Portal</p>
+        
+        <div class="content has-text-grey-light mb-5" style="font-size: 0.95rem; line-height: 1.6;">
+          <p>Welcome to the <strong>Open EMF Camper Portal</strong>! This system tracks the real-time campsite telemetry, location coordinates, step counts, and active statistics of our participants during the Electromagnetic Field (EMF) Camp.</p>
+          <p>Each camper carries a sensor-rigged tracking device that logs activities. Our live portal displays the following telemetry metrics:</p>
+          <ul style="list-style-type: square; margin-left: 1.5rem;">
+            <li>🍺 <strong>Drinks Consumed</strong> (beers logged in the field, coffees, water)</li>
+            <li>💩 <strong>Toilet Visits</strong> (pee and poo frequency charts)</li>
+            <li>🚶 <strong>Physical Activity</strong> (cumulative walking steps and estimated distance)</li>
+            <li>📈 <strong>Environmental data</strong> (ambient noise amplitude and local temperature)</li>
+            <li>💳 <strong>Monzo Budgets</strong> (live campfire expenditures and transactions)</li>
+          </ul>
+          <p class="has-text-grey has-text-centered mt-4">Select an active camper below to view their live telemetry dashboard:</p>
+        </div>
+        
+        <!-- Portal Quick Links Directory (FR-004 / FR-006: min height 48px) -->
+        <div class="buttons is-flex is-flex-direction-column">
+          <button class="button is-link is-fullwidth touch-btn mb-2" onclick="selectCamperDashboard('hvy')">Harvy Atwal (hvy)</button>
+          <button class="button is-danger is-fullwidth touch-btn mb-2" onclick="selectCamperDashboard('ali')">Alice Smith (ali)</button>
+          <button class="button is-success is-fullwidth touch-btn mb-2" onclick="selectCamperDashboard('bob')">Bob Camper (bob)</button>
+          <button class="button is-warning is-fullwidth touch-btn" onclick="selectCamperDashboard('combined')">Combined Camper Stats & Leaderboard</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Real-time Telemetry Dashboard Widgets View (FR-003) -->
+  <section class="section" id="dashboard-view">
     <div class="container">
       <div class="level mb-4">
         <div class="level-left">
