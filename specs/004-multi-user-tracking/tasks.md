@@ -24,8 +24,8 @@
 
 **Purpose**: Project initialization and basic structure updates
 
-- [ ] T001 Configure custom CSS variables for mobile-first vertical column stacking and 48px touch targets in `web/css/style.css`
-- [ ] T002 Add mock telemetry profiles and test user datasets in `backend/tests/mocks/`
+- [x] T001 Configure custom CSS variables for mobile-first vertical column stacking and 48px touch targets in `web/css/style.css`
+- [x] T002 Add mock telemetry profiles and test user datasets in `backend/tests/mocks/`
 
 ---
 
@@ -35,8 +35,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Update DynamoDB access helpers in `backend/lambdas/utils.py` to handle Partition Keys structured as `camper#aggregates#<user_id>` or `device#<device_id>#<user_id>`
-- [ ] T004 [P] Update token verification helper in `backend/lambdas/utils.py` to support profile-specific writes safely
+- [x] T003 Update DynamoDB access helpers in `backend/lambdas/utils.py` to handle Partition Keys structured as `camper#aggregates#<user_id>` or `device#<device_id>#<user_id>`
+- [x] T004 [P] Update token verification helper in `backend/lambdas/utils.py` to support profile-specific writes safely
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -52,17 +52,17 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T005 [P] [US1] Write unit test for `POST /beer` with custom `user_id` parameter inside `backend/tests/unit/test_beer_handler.py`
-- [ ] T006 [P] [US1] Write unit test verifying dual-writing to individual and combined aggregate partitions in `backend/tests/unit/test_beer_handler.py`
+- [x] T005 [P] [US1] Write unit test for `POST /beer` with custom `user_id` parameter inside `backend/tests/unit/test_beer_handler.py`
+- [x] T006 [P] [US1] Write unit test verifying dual-writing to individual and combined aggregate partitions in `backend/tests/unit/test_beer_handler.py`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Update `POST /beer` handler in `backend/lambdas/beer_handler/handler.py` to parse `user_id` (defaulting to `hvy`) and perform dual-writes to the individual user aggregates and the combined partition
-- [ ] T008 [US1] Update the request validation mapping inside `backend/lambdas/beer_handler/handler.py` to accept the `user_id` parameter
-- [ ] T009 [US1] Update `admin.html` to parse the compact `u` query parameter and bind it to form submissions and `localStorage` session caching
-- [ ] T010 [US1] Configure the profile switcher dropdown in `admin.html` to allow toggling active loggers
-- [ ] T011 [US1] Implement the 500ms client-side double-tap throttle inside `web/js/admin.js` to prevent duplicate logs
-- [ ] T012 [US1] Apply Bulma CSS column vertical stacking styles and 48px tactile heights in `admin.html` and `web/css/style.css`
+- [x] T007 [US1] Update `POST /beer` handler in `backend/lambdas/beer_handler/handler.py` to parse `user_id` (defaulting to `hvy`) and perform dual-writes to the individual user aggregates and the combined partition
+- [x] T008 [US1] Update the request validation mapping inside `backend/lambdas/beer_handler/handler.py` to accept the `user_id` parameter
+- [x] T009 [US1] Update `admin.html` to parse the compact `u` query parameter and bind it to form submissions and `localStorage` session caching
+- [x] T010 [US1] Configure the profile switcher dropdown in `admin.html` to allow toggling active loggers
+- [x] T011 [US1] Implement the 500ms client-side double-tap throttle inside `web/js/admin.js` to prevent duplicate logs
+- [x] T012 [US1] Apply Bulma CSS column vertical stacking styles and 48px tactile heights in `admin.html` and `web/css/style.css`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -76,14 +76,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T013 [P] [US2] Write unit test for `GET /beer?user_id=ali` and `GET /history?user_id=ali` inside `backend/tests/unit/test_beer_handler.py`
+- [x] T013 [P] [US2] Write unit test for `GET /beer?user_id=ali` and `GET /history?user_id=ali` inside `backend/tests/unit/test_beer_handler.py`
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Update GET routes in `backend/lambdas/beer_handler/handler.py` to support user-filtered queries
-- [ ] T015 [US2] Update `web/js/app.js` to parse `u` query parameter, bind context, and fetch filtered results
-- [ ] T016 [US2] Apply mobile-first column restructuring and canvas container aspect ratios in `index.html`
-- [ ] T017 [US2] Implement client-side connection warning and status banners in `web/js/app.js`
+- [x] T014 [US2] Update GET routes in `backend/lambdas/beer_handler/handler.py` to support user-filtered queries
+- [x] T015 [US2] Update `web/js/app.js` to parse `u` query parameter, bind context, and fetch filtered results
+- [x] T016 [US2] Apply mobile-first column restructuring and canvas container aspect ratios in `index.html`
+- [x] T017 [US2] Implement client-side connection warning and status banners in `web/js/app.js`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -97,13 +97,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] Write unit test for combined aggregate retrieval `GET /beer?user_id=combined` inside `backend/tests/unit/test_beer_handler.py`
+- [x] T018 [P] [US3] Write unit test for combined aggregate retrieval `GET /beer?user_id=combined` inside `backend/tests/unit/test_beer_handler.py`
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Implement combined aggregate fetcher returning consolidated categories sums and leaderboard ranking array in `backend/lambdas/beer_handler/handler.py`
-- [ ] T020 [US3] Update `index.html` to hide individual environmental charts when `?u=combined` is loaded
-- [ ] T021 [US3] Render dynamic leaderboard and combined sum tiles in `web/js/app.js`
+- [x] T019 [US3] Implement combined aggregate fetcher returning consolidated categories sums and leaderboard ranking array in `backend/lambdas/beer_handler/handler.py`
+- [x] T020 [US3] Update `index.html` to hide individual environmental charts when `?u=combined` is loaded
+- [x] T021 [US3] Render dynamic leaderboard and combined sum tiles in `web/js/app.js`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -113,10 +113,10 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T022 [P] Regenerate/Validate physical QR codes using short URL parameters and test scan locking times
-- [ ] T023 Run PEP 8 formatting check on `backend/lambdas/` using ruff
-- [ ] T024 Run test suite to verify 100% test coverage using pytest
-- [ ] T025 [P] Run curl validation commands in `specs/004-multi-user-tracking/quickstart.md`
+- [x] T022 [P] Regenerate/Validate physical QR codes using short URL parameters and test scan locking times
+- [x] T023 Run PEP 8 formatting check on `backend/lambdas/` using ruff
+- [x] T024 Run test suite to verify 100% test coverage using pytest
+- [x] T025 [P] Run curl validation commands in `specs/004-multi-user-tracking/quickstart.md`
 
 ---
 

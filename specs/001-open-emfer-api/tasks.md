@@ -24,9 +24,9 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project structure under `backend/` and `tf/` per implementation plan `specs/001-open-emfer-api/plan.md`
-- [ ] T002 Initialize Python project with ruff configuration in `backend/pyproject.toml`
-- [ ] T003 [P] Setup basic Terraform provider structure in `tf/main.tf`
+- [x] T001 Create project structure under `backend/` and `tf/` per implementation plan `specs/001-open-emfer-api/plan.md`
+- [x] T002 Initialize Python project with ruff configuration in `backend/pyproject.toml`
+- [x] T003 [P] Setup basic Terraform provider structure in `tf/main.tf`
 
 ---
 
@@ -36,10 +36,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Setup DynamoDB single-table composite key schema using Terraform in `tf/dynamodb.tf`
-- [ ] T005 [P] Setup AWS Secrets Manager variables inside `tf/secrets.tf`
-- [ ] T006 [P] Implement authorization helper and standard logging utilities in `backend/lambdas/utils.py`
-- [ ] T007 Configure local pytest framework and DynamoDB mocking configuration in `backend/tests/conftest.py`
+- [x] T004 Setup DynamoDB single-table composite key schema using Terraform in `tf/dynamodb.tf`
+- [x] T005 [P] Setup AWS Secrets Manager variables inside `tf/secrets.tf`
+- [x] T006 [P] Implement authorization helper and standard logging utilities in `backend/lambdas/utils.py`
+- [x] T007 Configure local pytest framework and DynamoDB mocking configuration in `backend/tests/conftest.py`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -55,15 +55,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T008 [P] [US1] Write unit test for standard drink log increment in `backend/tests/unit/test_beer_handler.py`
-- [ ] T009 [P] [US1] Write unit test for offset logging reversal under `"reverse": true` in `backend/tests/unit/test_beer_handler.py`
-- [ ] T010 [P] [US1] Write unit test for unauthorized logging request rejection in `backend/tests/unit/test_beer_handler.py`
+- [x] T008 [P] [US1] Write unit test for standard drink log increment in `backend/tests/unit/test_beer_handler.py`
+- [x] T009 [P] [US1] Write unit test for offset logging reversal under `"reverse": true` in `backend/tests/unit/test_beer_handler.py`
+- [x] T010 [P] [US1] Write unit test for unauthorized logging request rejection in `backend/tests/unit/test_beer_handler.py`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement incoming request validation matching JSON contract `beer-post.json` inside `backend/lambdas/beer_handler/handler.py`
-- [ ] T012 [US1] Implement telemetry aggregate accounting (increment/decrement) and raw log write logic in `backend/lambdas/beer_handler/handler.py`
-- [ ] T013 [US1] Deploy Lambda handler and POST `/beer` endpoint integrations using Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
+- [x] T011 [US1] Implement incoming request validation matching JSON contract `beer-post.json` inside `backend/lambdas/beer_handler/handler.py`
+- [x] T012 [US1] Implement telemetry aggregate accounting (increment/decrement) and raw log write logic in `backend/lambdas/beer_handler/handler.py`
+- [x] T013 [US1] Deploy Lambda handler and POST `/beer` endpoint integrations using Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -77,14 +77,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Write unit test for drink totals retrieval schema compliance in `backend/tests/unit/test_beer_handler.py`
-- [ ] T015 [P] [US2] Write unit test for location history retrieval in `backend/tests/unit/test_beer_handler.py`
+- [x] T014 [P] [US2] Write unit test for drink totals retrieval schema compliance in `backend/tests/unit/test_beer_handler.py`
+- [x] T015 [P] [US2] Write unit test for location history retrieval in `backend/tests/unit/test_beer_handler.py`
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Implement drink metrics consolidated sum and status response resolver in `backend/lambdas/beer_handler/handler.py`
-- [ ] T017 [US2] Implement location history sequence (max 20 entries) and travel totals fetcher in `backend/lambdas/beer_handler/handler.py`
-- [ ] T018 [US2] Deploy GET `/beer` and GET `/history` API routes in `tf/api_gateway.tf`
+- [x] T016 [US2] Implement drink metrics consolidated sum and status response resolver in `backend/lambdas/beer_handler/handler.py`
+- [x] T017 [US2] Implement location history sequence (max 20 entries) and travel totals fetcher in `backend/lambdas/beer_handler/handler.py`
+- [x] T018 [US2] Deploy GET `/beer` and GET `/history` API routes in `tf/api_gateway.tf`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -98,15 +98,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T019 [P] [US3] Write unit test for Haversine distance calculations and stride-based step mapping in `backend/tests/unit/test_sensecap_ingest.py`
-- [ ] T020 [P] [US3] Write unit test for Browan decibel level recording in `backend/tests/unit/test_browan_ingest.py`
+- [x] T019 [P] [US3] Write unit test for Haversine distance calculations and stride-based step mapping in `backend/tests/unit/test_sensecap_ingest.py`
+- [x] T020 [P] [US3] Write unit test for Browan decibel level recording in `backend/tests/unit/test_browan_ingest.py`
 
 ### Implementation for User Story 3
 
-- [ ] T021 [P] [US3] Implement Haversine mathematical distance solver and step-length estimators in `backend/lambdas/utils.py`
-- [ ] T022 [US3] Implement T1000 GPS ingestion and location history array limits (max 20 entries) inside `backend/lambdas/sensecap_ingest/handler.py`
-- [ ] T023 [US3] Implement Browan sound telemetry decibel tracking in `backend/lambdas/browan_ingest/handler.py`
-- [ ] T024 [US3] Deploy `/sensecap` and `/browan` API ingestion handlers using Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
+- [x] T021 [P] [US3] Implement Haversine mathematical distance solver and step-length estimators in `backend/lambdas/utils.py`
+- [x] T022 [US3] Implement T1000 GPS ingestion and location history array limits (max 20 entries) inside `backend/lambdas/sensecap_ingest/handler.py`
+- [x] T023 [US3] Implement Browan sound telemetry decibel tracking in `backend/lambdas/browan_ingest/handler.py`
+- [x] T024 [US3] Deploy `/sensecap` and `/browan` API ingestion handlers using Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
 
 **Checkpoint**: User Stories 1, 2, and 3 should now be independently functional
 
@@ -120,15 +120,15 @@
 
 ### Tests for User Story 4
 
-- [ ] T025 [P] [US4] Write unit test for dynamic Monzo OAuth credential retrieval from Secrets Manager in `backend/tests/unit/test_monzo_sync.py`
-- [ ] T026 [P] [US4] Write unit test verifying that positive deposit credits are parsed with a `(CREDIT)` tag in `backend/tests/unit/test_monzo_sync.py`
+- [x] T025 [P] [US4] Write unit test for dynamic Monzo OAuth credential retrieval from Secrets Manager in `backend/tests/unit/test_monzo_sync.py`
+- [x] T026 [P] [US4] Write unit test verifying that positive deposit credits are parsed with a `(CREDIT)` tag in `backend/tests/unit/test_monzo_sync.py`
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] Implement AWS Secrets Manager loading and Monzo API polling loops in `backend/lambdas/monzo_sync/handler.py`
-- [ ] T028 [US4] Implement transaction cents-to-pounds currency division and Credit formatting in `backend/lambdas/monzo_sync/handler.py`
-- [ ] T029 [US4] Implement cached GET `/monzo` transaction database read handler inside `backend/lambdas/monzo_sync/handler.py`
-- [ ] T030 [US4] Configure scheduled EventBridge rule sync (cron) and deploy GET `/monzo` endpoint with Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
+- [x] T027 [US4] Implement AWS Secrets Manager loading and Monzo API polling loops in `backend/lambdas/monzo_sync/handler.py`
+- [x] T028 [US4] Implement transaction cents-to-pounds currency division and Credit formatting in `backend/lambdas/monzo_sync/handler.py`
+- [x] T029 [US4] Implement cached GET `/monzo` transaction database read handler inside `backend/lambdas/monzo_sync/handler.py`
+- [x] T030 [US4] Configure scheduled EventBridge rule sync (cron) and deploy GET `/monzo` endpoint with Terraform in `tf/lambdas.tf` and `tf/api_gateway.tf`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -138,11 +138,11 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T031 Align root-level contract schemas in `openapi.json` with final API Gateway route deployments
-- [ ] T032 Run PEP 8 style checks and formatting validations using ruff inside `backend/`
-- [ ] T033 Verify Terraform stack validations using `terraform validate` inside `tf/`
-- [ ] T034 Run full test suite with `pytest` inside `backend/`
-- [ ] T035 [P] Run curl validation tests defined in `specs/001-open-emfer-api/quickstart.md` on deployed infrastructure
+- [x] T031 Align root-level contract schemas in `openapi.json` with final API Gateway route deployments
+- [x] T032 Run PEP 8 style checks and formatting validations using ruff inside `backend/`
+- [x] T033 Verify Terraform stack validations using `terraform validate` inside `tf/`
+- [x] T034 Run full test suite with `pytest` inside `backend/`
+- [x] T035 [P] Run curl validation tests defined in `specs/001-open-emfer-api/quickstart.md` on deployed infrastructure
 
 ---
 
