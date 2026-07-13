@@ -24,6 +24,10 @@
 - **Decision**: Keep the administrative portal (`web/admin.html`) completely decoupled and distinct from the public landing page routing. Do not expose any public links or navigation points leading to administrative pages on the landing page.
 - **Rationale**: Mitigates security discoverability risk, preserves visual simplicity on the landing page, and maintains strict separation of concerns for AWS Free Tier optimization.
 
+### 6. Dynamic Campground Location Map Overlay (T1000)
+- **Decision**: Render a simple static campground background map image inside `#map-overlay-view`. Layer a high-performance, absolute-positioned `<canvas>` or CSS coordinate elements on top of the image to plot the last 6 GPS path points of Harvy's coordinates trajectory. Scale coordinate coordinates to image pixels dynamically via JavaScript.
+- **Rationale**: Completely avoids dynamic, costly GIS map integrations or paid maps API keys (Google Maps, Mapbox) that violate the AWS Free Tier. It runs fully client-side and performs smoothly with minimal page loading footprint.
+
 ---
 
 ## Technical Specifications & Variables

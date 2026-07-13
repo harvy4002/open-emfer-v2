@@ -11,19 +11,21 @@ At runtime, the single-page application (`web/index.html`) maintains a virtual s
   - Key sections: Project Introduction paragraphs, Active Participant quick link buttons (`hvy`, `cha`, `ash`, `tin`, `combined`).
 - **Container 2**: `#dashboard-view` (Telemetry widgets panel)
   - Key sections: Title header, metric cards, chart panels, historical logs list.
+- **Container 3**: `#map-overlay-view` (T1000 GPS Location History Map)
+  - Key sections: Campground map background graphic, absolute-positioned overlay path plotting Harvy's trail coordinates.
 
 ### View Visibility State Mapping
 The visibility states of the containers map to the presence and validation of the URL parameters on load:
 
-| Query Parameter `u` value | `#intro-landing-view` visibility | `#dashboard-view` visibility | Active Dashboard Context |
-|-------------------------|--------------------------------|------------------------------|--------------------------|
-| `(absent)` / `null` | **VISIBLE** | **HIDDEN** | N/A (Project Landing Page) |
-| `hvy` | **HIDDEN** | **VISIBLE** | Harvy's stats |
-| `cha` | **HIDDEN** | **VISIBLE** | Charlotte's stats |
-| `ash` | **HIDDEN** | **VISIBLE** | Ash's stats |
-| `tin` | **HIDDEN** | **VISIBLE** | Tina's stats |
-| `combined` | **HIDDEN** | **VISIBLE** | Combined Camper stats |
-| `(any other value)` | **VISIBLE** | **HIDDEN** | Fallback (displays intro page) |
+| Query Parameter `u` value | `#intro-landing-view` visibility | `#dashboard-view` visibility | `#map-overlay-view` visibility | Active Dashboard Context |
+|-------------------------|--------------------------------|------------------------------|--------------------------------|--------------------------|
+| `(absent)` / `null` | **VISIBLE** | **HIDDEN** | **HIDDEN** | N/A (Project Landing Page) |
+| `hvy` | **HIDDEN** | **VISIBLE** | **VISIBLE** | Harvy's stats (with full sensors & map) |
+| `cha` | **HIDDEN** | **VISIBLE** | **HIDDEN** | Charlotte's stats (limited sensors) |
+| `ash` | **HIDDEN** | **VISIBLE** | **HIDDEN** | Ash's stats (limited sensors) |
+| `tin` | **HIDDEN** | **VISIBLE** | **HIDDEN** | Tina's stats (limited sensors) |
+| `combined` | **HIDDEN** | **VISIBLE** | **HIDDEN** | Combined Camper stats |
+| `(any other value)` | **VISIBLE** | **HIDDEN** | **HIDDEN** | Fallback (displays intro page) |
 
 ---
 

@@ -71,3 +71,18 @@ Ensure you have Python 3.12+ installed.
   6. Click the browser's **Forward** button.
   7. Verify that `#intro-landing-view` is hidden, and `#dashboard-view` is shown with Charlotte's stats.
 
+---
+
+### Validation Scenario 5: Harvy's Exclusive T1000 GPS Location History Map
+- **Steps**:
+  1. Open a browser tab and load [http://localhost:8080/index.html?u=hvy](http://localhost:8080/index.html?u=hvy).
+  2. Verify that:
+     - The main dashboard title displays "Harvy's Telemetry Dashboard".
+     - Environmental widgets (Ambient Temperature line graph and Ambient Noise level bar chart) are fully visible.
+     - A dedicated **"📡 Camper Location History Map"** overlay card renders, displaying a graphical camp map background.
+     - A visual trail/route representing Harvy's last 6 GPS coordinate points is plotted cleanly on top of the map background.
+  3. Now load [http://localhost:8080/index.html?u=cha](http://localhost:8080/index.html?u=cha).
+  4. Verify that:
+     - The environmental temperature and noise widgets are completely hidden.
+     - The "Camper Location History Map" overlay is completely hidden/removed from Charlotte's dashboard.
+

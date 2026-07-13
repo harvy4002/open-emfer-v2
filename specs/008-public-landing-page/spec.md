@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "make it so the main site page explains what the project is about but then each url that encodes the partipants names shows their dashboard"
+**Input**: User description: "make it so the main site page explains what the project is about but then each url that encodes the partipants names shows their dashboard. harvy is the only one with the t1000 and browan sensor. Update their dashboard with that sensor data, on the main dashboard mention that Harvy has more sensors. Remove those features from the other participants. the t1000 also has sensor data, so hook that up as well. I want people to see the last few hours of location data overlaing with a map that is to be provided."
 
 ---
 
@@ -20,6 +20,8 @@ With this update:
 1. **The Root Domain acts as an Informational Landing Page**: When accessed with no user query parameters, the page displays a welcoming, high-contrast introduction explaining what the Open EMF Camper tracking project is, what telemetry is gathered, and how to use it.
 2. **Instant Bypassing for Bookmarks and QR Scans**: When accessed with a valid camper query parameter (such as `?u=cha`, `?u=hvy`, `?u=ash`, `?u=tin`, or `?u=combined`), the static introductory content is completely bypassed/hidden, loading that participant's telemetry dashboard instantly.
 3. **Communal Directory**: The informational landing page provides clear, easily clickable buttons for each participant, allowing users to dive into individual dashboards with a single tap.
+4. **Sensor payload differentiation (T1000 & Browan)**: Since Harvy is the only participant carrying the advanced T1000 and Browan environment tracking hardware, his individual dashboard strictly features these environmental sensors (ambient temperature and noise level charts). These environmental widgets are removed/hidden from Charlotte, Ash, and Tina's telemetry dashboards. The main onboarding landing page portal directory specifically highlights that Harvy's rig contains more sensors.
+5. **GPS Location History Map Overlay (T1000)**: Harvy's dashboard also displays his recent campsite location history (from the T1000 tracker) overlaid onto a provided camp map graphic. This maps his movement path over the last few hours, giving visitors a visual trail of his camp activity.
 
 ### Out of Scope
 - **Participant Admin Portal Integration**: The administrative page (`admin.html`) and associated logging/manual entry features are completely separate and out of scope; no links or redirection pathways will be visible on the public landing page.
@@ -35,6 +37,8 @@ With this update:
 - Q: Browser Back/Forward Button Navigation (Popstate) → A: Full popstate handling (Option A). Intercept browser back/forward popstate events to seamlessly toggle view states in the single-page app without forcing a full page reload.
 - Q: Public Landing Page Boundaries and Admin Separation → A: Complete Segregation (Option A). Keep the public landing page strictly focused on public informational content; administrative access (`admin.html`) is completely out-of-scope and separate.
 - Q: Dynamic Tracker User Accounts → A: Hardcode the 4 active participants: Harvy (`hvy`), Charlotte (`cha`), Ash (`ash`), and Tina (`tin`) along with their 3-letter shortcodes.
+- Q: Sensor Hardware Restrictions → A: Temperature and ambient noise telemetry widgets (T1000 and Browan) belong exclusively to Harvy's dashboard. Hide them for Charlotte, Ash, Tina, and Combined views. Highlight his extra sensor capability on the main landing portal directory.
+- Q: Location Map Overlay Display → A: Plot Harvy's last few hours of T1000 coordinate telemetry as a visual plotted line path overlaid directly onto a static camp map background image on his dashboard only.
 
 ---
 
@@ -51,7 +55,8 @@ As a public visitor navigating to the project's root domain, I want to see an in
 **Acceptance Scenarios**:
 
 1. **Given** a visitor navigates to the root URL with no query parameters, **When** the page loads, **Then** they see introductory paragraphs about EMF Camp, steps/drinks trackers, and a list of active participants (Harvy, Charlotte, Ash, Tina).
-2. **Given** the introductory landing page is active, **When** viewed, **Then** all live telemetry charts and individual widget panels are hidden from view.
+2. **Given** the active participants directory is shown, **When** viewed, **Then** Harvy's directory button features a distinct badge or text mentioning that his tracker contains more environmental sensors (T1000, Browan).
+3. **Given** the introductory landing page is active, **When** viewed, **Then** all live telemetry charts and individual widget panels are hidden from view.
 
 ---
 
@@ -66,7 +71,8 @@ As a camp follower scanning a camper's gear QR code (e.g. `https://emf.harvinder
 **Acceptance Scenarios**:
 
 1. **Given** a user opens a link containing `?u=cha`, **When** the page resolves, **Then** the introduction card is hidden, the main telemetry panel displays "Charlotte's Dashboard", and dynamic fetches load Charlotte's live values.
-2. **Given** a user opens a link containing `?u=combined`, **When** the page resolves, **Then** the introduction is hidden and the global camper leaderboard displays.
+2. **Given** Charlotte's telemetry dashboard is loaded, **When** viewed, **Then** the ambient temperature and noise level charts (T1000/Browan features) are completely hidden/removed from her interface.
+3. **Given** a user opens a link containing `?u=hvy`, **When** the page resolves, **Then** the main telemetry dashboard displays Harvy's stats, and his ambient temperature, noise charts, and location history map overlay are fully visible.
 
 ---
 
@@ -104,6 +110,9 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 - **FR-007 (Responsive Layout)**: Both the landing page introduction text and the telemetry dashboard panels MUST be fully responsive, stacking vertically on smaller viewports (down to 320px width) with zero horizontal scrolls.
 - **FR-008 (History Back/Forward Navigation)**: The application MUST listen for standard browser `popstate` events, dynamically toggling the active view container (Introduction vs. specific user dashboard) to handle browser Back and Forward button interactions correctly without requiring a full page reload.
 - **FR-009 (Static Directory Hosting)**: The list of active tracking participants (`hvy`, `cha`, `ash`, `tin`, `combined`) and their metadata MUST be hardcoded within the static frontend assets (`web/js/app.js`), preventing dynamic backend requests or DB queries on load, optimizing for zero-cost static S3 hosting (AWS Free Tier optimized).
+- **FR-010 (Sensor Ownership Restrictions)**: The environmental sensor tracking charts (Ambient Temperature and Noise Level, powered by T1000 and Browan LoRa hardware) MUST strictly be displayed ONLY when the active dashboard is Harvy's (`?u=hvy`). These environmental panels MUST be completely hidden from all other participants' dashboards (`cha`, `ash`, `tin`) and the combined leaderboard.
+- **FR-011 (Onboarding Landing Page Highlight)**: Harvy's button entry on the main project onboarding landing directory page MUST feature a prominent textual indicator (e.g. "📡 Extra sensors active (T1000, Browan)") to inform public visitors of his additional environmental telemetry payload.
+- **FR-012 (Camper Location History Map Overlay)**: Harvy's dashboard MUST strictly display a camper location history panel (`#map-overlay-view`). This panel displays a campground map image as a background with a plotted coordinates route path representing the last few hours of his movement telemetry from the T1000 LoRa tracker. This map overlay is removed/hidden from all other participants' dashboards and combined views.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -119,6 +128,9 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 - **SC-002**: Navigating to `index.html?u=cha` renders Charlotte's active dashboard, with 100% of the project introduction text successfully hidden.
 - **SC-003**: Clicking any participant button on the landing page or using browser Back/Forward navigation transitions the page to the target view state in under 500ms, with zero visual layout overflows or overlaps.
 - **SC-004**: All portal navigation buttons pass 100% of mobile-responsive touch validation tests with at least a 48px sizing envelope.
+- **SC-005**: Loading Charlotte's (`cha`), Ash's (`ash`), or Tina's (`tin`) dashboard hides 100% of the environmental sensor widgets (Ambient Temperature and Noise Level), and loading Harvy's (`hvy`) dashboard shows them with 100% visibility.
+- **SC-006**: Harvy's portal button on the landing page displays his name alongside the specific textual indication of additional active sensors.
+- **SC-007**: When Harvy's dashboard is active, the location history map overlay is rendered displaying his plotted active campsite tracking coordinates overlaid onto a campground background graphic, loading in under 1.5 seconds.
 
 ---
 

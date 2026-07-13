@@ -62,14 +62,18 @@ function initUI() {
   const displayName = USER_NAMES[activeUser] || `${activeUser.toUpperCase()}'s Dashboard`;
   document.getElementById("dashTitle").textContent = displayName;
   
-  if (activeUser === "combined") {
-    // Hide environmental charts on combined view (Option A)
-    document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
-    document.getElementById("leaderboard-panel").classList.remove("hidden");
-  } else {
+  if (activeUser === "hvy") {
+    // Show environmental panels and maps overlay for Harvy ONLY (FR-010 / FR-012)
     document.querySelectorAll(".env-panel").forEach(el => el.classList.remove("hidden"));
     document.getElementById("leaderboard-panel").classList.add("hidden");
     initCharts();
+  } else if (activeUser === "combined") {
+    document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
+    document.getElementById("leaderboard-panel").classList.remove("hidden");
+  } else {
+    // Hide environmental panels and map overlay for other individual participants (cha, ash, tin)
+    document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
+    document.getElementById("leaderboard-panel").classList.add("hidden");
   }
 }
 
@@ -130,7 +134,7 @@ function initCharts() {
 }
 
 function updateCharts(tempHistory, noiseHistory) {
-  if (activeUser === "combined" || !tempChart || !noiseChart) return;
+  if (activeUser !== "hvy" || !tempChart || !noiseChart) return;
   
   if (tempHistory && tempHistory.length > 0) {
     tempChart.data.datasets[0].data = tempHistory.map(x => x.temp);
@@ -165,22 +169,26 @@ async function fetchTelemetry() {
       updateLeaderboard(data.leaderboard || []);
     }
 
-    // 2. Fetch history (steps & temperature)
+    // 2. Fetch history (steps & temperature & GPS location history map)
     const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}`);
     if (resHistory.ok) {
       const historyData = await resHistory.json();
       document.getElementById("stepsVal").textContent = Number(historyData.cumulative_steps || 0).toLocaleString();
       document.getElementById("distVal").textContent = `Distance: ${Number(historyData.cumulative_distance_km || 0).toFixed(2)} km`;
 
-      // Extract temperature readings from coordinates history
       const locationHistory = historyData.location_history || [];
-      const tempHistory = locationHistory.slice(-6).map(pt => ({
-        temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
-        time: pt.time
-      }));
-      const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
-      
-      updateCharts(tempHistory, noiseHistory);
+
+      if (activeUser === "hvy") {
+        // Extract temperature readings from coordinates history
+        const tempHistory = locationHistory.slice(-6).map(pt => ({
+          temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
+          time: pt.time
+        }));
+        const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
+        
+        updateCharts(tempHistory, noiseHistory);
+        drawLocationTrail(locationHistory);
+      }
     }
 
     // 3. Fetch status text (StatusLatestResponse)
@@ -237,6 +245,82 @@ function updateLeaderboard(leaderboard) {
         <span style="color: #ff780a;">${user.total_drinks} drinks</span>
       </div>
     `;
+  });
+}
+
+// Draw dynamic coordinates path overlays onto static map background (FR-012)
+function drawLocationTrail(locationHistory) {
+  const canvas = document.getElementById("map-trail-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  if (!locationHistory || locationHistory.length === 0) return;
+
+  const points = locationHistory.slice(-6);
+
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity, maxLng = -Infinity;
+
+  points.forEach(pt => {
+    if (pt.lat < minLat) minLat = pt.lat;
+    if (pt.lat > maxLat) maxLat = pt.lat;
+    if (pt.lng < minLng) minLng = pt.lng;
+    if (pt.lng > maxLng) maxLng = pt.lng;
+  });
+
+  const latRange = (maxLat - minLat) || 1;
+  const lngRange = (maxLng - minLng) || 1;
+
+  // Plot path lines
+  ctx.beginPath();
+  ctx.strokeStyle = "#ff780a";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  points.forEach((pt, idx) => {
+    const x = 50 + ((pt.lng - minLng) / lngRange) * (rect.width - 100);
+    const y = 50 + (1 - (pt.lat - minLat) / latRange) * (rect.height - 100);
+
+    if (idx === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+
+  // Plot markers
+  points.forEach((pt, idx) => {
+    const x = 50 + ((pt.lng - minLng) / lngRange) * (rect.width - 100);
+    const y = 50 + (1 - (pt.lat - minLat) / latRange) * (rect.height - 100);
+
+    ctx.beginPath();
+    if (idx === points.length - 1) {
+      // Current active coordinate head
+      ctx.fillStyle = "#e02f44";
+      ctx.arc(x, y, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(224, 47, 68, 0.4)";
+      ctx.lineWidth = 2;
+      ctx.arc(x, y, 12, 0, 2 * Math.PI);
+      ctx.stroke();
+    } else {
+      // Trailing breadcrumbs
+      ctx.fillStyle = "#ff780a";
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+    }
   });
 }
 

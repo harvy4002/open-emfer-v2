@@ -43,9 +43,9 @@
 
 ## Phase 3: User Story 1 - Welcoming Project Introduction (Priority: P1) 🎯 MVP
 
-**Goal**: Welcoming landing page introducing the Open EMF Camper project when accessing the root URL with no parameter.
+**Goal**: Welcoming landing page introducing the Open EMF Camper project when accessing the root URL with no parameter, highlighting Harvy's additional sensors.
 
-**Independent Test**: Navigate to root `index.html` without parameters. Verify introduction text is shown and dashboard panels are hidden.
+**Independent Test**: Navigate to root `index.html` without parameters. Verify introduction text and Harvy's sensor highlight is shown and dashboard panels are hidden.
 
 - [X] T005 [P] [US1] Create the static introduction card HTML content inside `#intro-landing-view` in `web/index.html`, explaining EMF camp, LoRa telemetry, step tracking, and Monzo expenses sync.
 - [X] T006 [P] [US1] Implement load-time URL query parameter parsing for `u` (or `user_id`) inside `web/js/app.js`.
@@ -55,18 +55,21 @@
 
 ---
 
-## Phase 4: User Story 2 - Seamless Telemetry Dashboard Bypass (Priority: P1)
+## Phase 4: User Story 2 - Seamless Telemetry Dashboard Bypass & Sensor Ownership (Priority: P1)
 
-**Goal**: Instant rendering of individual camper dashboards when loaded with URL query parameters.
+**Goal**: Instant rendering of individual camper dashboards when loaded with URL query parameters, dynamically showing/hiding environmental sensors and the T1000 location map overlay for Harvy only.
 
-**Independent Test**: Navigate to `index.html?u=cha`. Verify introduction card is hidden and Charlotte's dynamic widgets load.
+**Independent Test**: Navigate to `index.html?u=cha`. Verify environmental panels and map overlay are hidden. Navigate to `index.html?u=hvy`. Verify environmental temperature/noise charts and map overlay trail are fully visible.
 
 - [X] T008 [P] [US2] Define a hardcoded participant registry map (`hvy`, `cha`, `ash`, `tin`, `combined` with names) in `web/js/app.js` to avoid external API calls (AWS Free Tier optimized).
 - [X] T009 [US2] Update page-load initialization in `web/js/app.js` to ignore `localStorage` cached user state on initial direct load if no URL parameters are present, prioritizing the introductory landing page.
 - [X] T010 [US2] Update URL routing logic in `web/js/app.js` to immediately show `#dashboard-view`, hide `#intro-landing-view`, and load telemetry if a valid camper ID parameter is present.
-- [X] T011 [US2] Implement fallback behavior in `web/js/app.js` to fallback gracefully to showing `#intro-landing-view` if an invalid or unrecognized camper ID parameter (e.g. `?u=xyz`) is supplied.
+- [X] T011 [US2] Implement environmental sensor widget visibility toggles inside `web/js/app.js` to strictly hide temperature and noise charts (`.env-panel`) unless the active user is `hvy`.
+- [X] T012 [US2] Create `#map-overlay-view` layout widget containing a static campground map image background and absolute positioned canvas container in `web/index.html`.
+- [X] T013 [US2] Implement dynamic coordinate trails plotting on `#map-overlay-view` canvas in `web/js/app.js` to map Harvy's last 6 coordinate points from T1000 history, hiding the panel for other users.
+- [X] T014 [US2] Implement fallback behavior in `web/js/app.js` to fallback gracefully to showing `#intro-landing-view` if an invalid or unrecognized camper ID parameter (e.g. `?u=xyz`) is supplied.
 
-**Checkpoint**: At this point, User Stories 1 and 2 should both work independently.
+**Checkpoint**: At this point, User Stories 1 and 2 should both work independently with full sensor segregation and map overlay features.
 
 ---
 
@@ -76,10 +79,10 @@
 
 **Independent Test**: Click "Charlotte" portal button, verify URL updates to `?u=cha` and dashboard transitions dynamically. Click back, verify it transitions back to landing page introduction.
 
-- [X] T012 [P] [US3] Create dedicated, mobile-optimized navigation buttons for Harvy, Charlotte, Ash, Tina, and Combined dashboards within `#intro-landing-view` in `web/index.html`.
-- [X] T013 [P] [US3] Implement dynamic page transition function `selectCamperDashboard` inside `web/js/app.js` utilizing `window.history.pushState` to transition views without full page reloads.
-- [X] T014 [US3] Register click event handler listeners on all quick link portal buttons in `web/js/app.js` to call the routing transition helper function.
-- [X] T015 [US3] Register browser `popstate` event listener on `window` in `web/js/app.js` to dynamically handle history back/forward navigation, toggling view visibility states based on history parameters.
+- [X] T015 [P] [US3] Create dedicated, mobile-optimized navigation buttons for Harvy, Charlotte, Ash, Tina, and Combined dashboards within `#intro-landing-view` in `web/index.html`, explicitly highlighting Harvy's extra sensors.
+- [X] T016 [P] [US3] Implement dynamic page transition function `selectCamperDashboard` inside `web/js/app.js` utilizing `window.history.pushState` to transition views without full page reloads.
+- [X] T017 [US3] Register click event handler listeners on all quick link portal buttons in `web/js/app.js` to call the routing transition helper function.
+- [X] T018 [US3] Register browser `popstate` event listener on `window` in `web/js/app.js` to dynamically handle history back/forward navigation, toggling view visibility states based on history parameters.
 
 **Checkpoint**: All user stories should now be independently functional.
 
@@ -89,9 +92,9 @@
 
 **Purpose**: Improvements that affect multiple user stories.
 
-- [X] T016 Verify all interactive buttons and link elements on the landing page maintain a minimum 48px width/height sizing envelope in `web/index.html` to satisfy mobile-responsiveness constraints.
-- [X] T017 Validate layout responsiveness down to 320px with zero horizontal scrolls for both view states in `web/index.html`.
-- [X] T018 Run the complete end-to-end routing and popstate validation scenarios in `specs/008-public-landing-page/quickstart.md` using the local python server.
+- [X] T019 Verify all interactive buttons and link elements on the landing page maintain a minimum 48px width/height sizing envelope in `web/index.html` to satisfy mobile-responsiveness constraints.
+- [X] T020 Validate layout responsiveness down to 320px with zero horizontal scrolls for both view states in `web/index.html`.
+- [X] T021 Run the complete end-to-end routing and popstate validation scenarios in `specs/008-public-landing-page/quickstart.md` using the local python server.
 
 ---
 
@@ -117,7 +120,7 @@
 
 - Phase 3 Setup: `T005` (HTML) and `T006` (JS parameter parsing) can be implemented in parallel.
 - Phase 4 Setup: Hardcoding participant registry `T008` can be done in parallel with other JS routing changes.
-- Phase 5 Setup: Navigation buttons UI `T012` and transition JS function `T013` can be written in parallel.
+- Phase 5 Setup: Navigation buttons UI `T015` and transition JS function `T016` can be written in parallel.
 
 ---
 
