@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `/specs/008-public-landing-page/`
 
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, quickstart.md
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -21,24 +21,23 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Project initialization and basic structure verification.
+**Purpose**: Basic verification of development server environment.
 
-- [X] T001 Create feature checklists directory and copy standard index files in `specs/008-public-landing-page/`
-- [X] T002 [P] Verify existing web directory structure and serve configurations in `backend/sim_server.py`
-- [X] T003 [P] Verify code style configurations for ES6 standard JavaScript inside `web/js/app.js`
+- [X] T001 Verify local web serving configuration for `web/` directory using `python3 -m http.server -d web 8080`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented.
+**Purpose**: Core UI visibility elements and division of layout containers.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T004 Define the standard CSS layout helper classes (specifically `.hidden` for display none) inside `web/index.html`
-- [X] T005 [P] Isolate the main telemetry dashboard elements into a single parent layout container `#dashboard-view` inside `web/index.html`
+- [X] T002 Define the helper CSS rule `.hidden { display: none !important; }` in the stylesheet within `web/index.html`
+- [X] T003 Isolate existing Grafana-style telemetry panels inside a single parent container `#dashboard-view` in `web/index.html`
+- [X] T004 Create the empty `#intro-landing-view` container element as a placeholder for landing content in `web/index.html`
 
-**Checkpoint**: Foundation ready - user story implementation can now begin.
+**Checkpoint**: Core view containers established. User story implementation can now begin.
 
 ---
 
@@ -48,11 +47,11 @@
 
 **Independent Test**: Navigate to root `index.html` without parameters. Verify introduction text is shown and dashboard panels are hidden.
 
-- [X] T006 [US1] Create the static introduction container `#intro-landing-view` with descriptive paragraphs explaining the project goals in `web/index.html`
-- [X] T007 [US1] Implement load-time query parameter checking to detect the presence of `u` or `user_id` inside `web/js/app.js`
-- [X] T008 [US1] Implement visibility toggles to show `#intro-landing-view` and hide `#dashboard-view` if parameters are absent inside `web/js/app.js`
+- [X] T005 [P] [US1] Create the static introduction card HTML content inside `#intro-landing-view` in `web/index.html`, explaining EMF camp, LoRa telemetry, step tracking, and Monzo expenses sync.
+- [X] T006 [P] [US1] Implement load-time URL query parameter parsing for `u` (or `user_id`) inside `web/js/app.js`.
+- [X] T007 [US1] Implement core view routing toggle logic in `web/js/app.js` to hide `#dashboard-view` and show `#intro-landing-view` if no parameters are present.
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
+**Checkpoint**: At this point, User Story 1 is fully functional and testable independently.
 
 ---
 
@@ -62,24 +61,25 @@
 
 **Independent Test**: Navigate to `index.html?u=ali`. Verify introduction card is hidden and Alice's dynamic widgets load.
 
-- [X] T009 [US2] Implement parameter bypass logic to hide `#intro-landing-view` and display `#dashboard-view` if a valid identifier is present inside `web/js/app.js`
-- [X] T010 [US2] Configure page-load initialization to ignore local storage caches for view toggling when loading the raw root URL inside `web/js/app.js`
-- [X] T011 [US2] Implement fallback routing to redirect unrecognized user IDs back to the introductory landing page inside `web/js/app.js`
+- [X] T008 [P] [US2] Define a hardcoded participant registry map (`hvy`, `ali`, `bob`, `combined` with names) in `web/js/app.js` to avoid external API calls (AWS Free Tier optimized).
+- [X] T009 [US2] Update page-load initialization in `web/js/app.js` to ignore `localStorage` cached user state on initial direct load if no URL parameters are present, prioritizing the introductory landing page.
+- [X] T010 [US2] Update URL routing logic in `web/js/app.js` to immediately show `#dashboard-view`, hide `#intro-landing-view`, and load telemetry if a valid camper ID parameter is present.
+- [X] T011 [US2] Implement fallback behavior in `web/js/app.js` to fallback gracefully to showing `#intro-landing-view` if an invalid or unrecognized camper ID parameter (e.g. `?u=xyz`) is supplied.
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently.
+**Checkpoint**: At this point, User Stories 1 and 2 should both work independently.
 
 ---
 
 ## Phase 5: User Story 3 - Interactive Camper Portal Directory (Priority: P2)
 
-**Goal**: Tactile quick links for Harvy, Alice, Bob, and Combined dashboards that update state via `pushState` history.
+**Goal**: Tactile quick links for Harvy, Alice, Bob, and Combined dashboards that update state via `pushState` history and handle browser Back/Forward navigation (`popstate`).
 
-**Independent Test**: Click "Alice Smith" portal button, verify URL updates to `?u=ali` and dashboard transitions dynamically.
+**Independent Test**: Click "Alice Smith" portal button, verify URL updates to `?u=ali` and dashboard transitions dynamically. Click back, verify it transitions back to landing page introduction.
 
-- [X] T012 [US3] Add quick-link action buttons for each active camper and the combined view inside the landing page container in `web/index.html`
-- [X] T013 [US3] Implement the custom transition function `selectCamperDashboard` utilizing `window.history.pushState` inside `web/js/app.js`
-- [X] T014 [US3] Update portal link elements and form fields to maintain a minimum of 48px tactile height inside `web/index.html`
-- [X] T015 [US3] Register click handler events on all quick link buttons to call the dynamic router transition function in `web/js/app.js`
+- [X] T012 [P] [US3] Create dedicated, mobile-optimized navigation buttons for Harvy, Alice, Bob, and Combined dashboards within `#intro-landing-view` in `web/index.html`.
+- [X] T013 [P] [US3] Implement dynamic page transition function `selectCamperDashboard` inside `web/js/app.js` utilizing `window.history.pushState` to transition views without full page reloads.
+- [X] T014 [US3] Register click event handler listeners on all quick link portal buttons in `web/js/app.js` to call the routing transition helper function.
+- [X] T015 [US3] Register browser `popstate` event listener on `window` in `web/js/app.js` to dynamically handle history back/forward navigation, toggling view visibility states based on history parameters.
 
 **Checkpoint**: All user stories should now be independently functional.
 
@@ -89,9 +89,9 @@
 
 **Purpose**: Improvements that affect multiple user stories.
 
-- [X] T016 [P] Document and clean up styling references and unused layout rules inside `web/index.html`
-- [X] T017 [P] Clean up console statements and refactor routing helper logic inside `web/js/app.js`
-- [X] T018 Execute and validate all onboarding routing scenarios defined in `specs/008-public-landing-page/quickstart.md` using the local python server
+- [X] T016 Verify all interactive buttons and link elements on the landing page maintain a minimum 48px width/height sizing envelope in `web/index.html` to satisfy mobile-responsiveness constraints.
+- [X] T017 Validate layout responsiveness down to 320px with zero horizontal scrolls for both view states in `web/index.html`.
+- [X] T018 Run the complete end-to-end routing and popstate validation scenarios in `specs/008-public-landing-page/quickstart.md` using the local python server.
 
 ---
 
@@ -115,9 +115,9 @@
 
 ## Parallel Execution Opportunities
 
-- Setup tasks `T002` and `T003` can run in parallel.
-- Foundational task `T005` can run in parallel with `T004`.
-- Polish tasks `T016` and `T017` can run in parallel once US3 is implemented.
+- Phase 3 Setup: `T005` (HTML) and `T006` (JS parameter parsing) can be implemented in parallel.
+- Phase 4 Setup: Hardcoding participant registry `T008` can be done in parallel with other JS routing changes.
+- Phase 5 Setup: Navigation buttons UI `T012` and transition JS function `T013` can be written in parallel.
 
 ---
 

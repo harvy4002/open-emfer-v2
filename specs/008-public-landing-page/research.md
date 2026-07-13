@@ -16,6 +16,14 @@
 - **Decision**: Modify `web/js/app.js` initialization logic to strictly check for the presence of query parameters on page load. If the URL contains no user query parameters, the portal MUST render the introductory landing page, ignoring any cached `active_user_id` inside `localStorage`.
 - **Rationale**: Guarantees that public visitors navigating directly to the root domain (`https://emf.harvinderatwal.com/`) are always welcomed by the informational landing page, even if they have previously viewed a camper dashboard.
 
+### 4. Back/Forward Navigation Handling via popstate
+- **Decision**: Handle standard browser `popstate` events by listening to `window.addEventListener('popstate', ...)` and calling the routing state handler to toggle container visibility dynamically on history back/forward operations.
+- **Rationale**: Aligns with modern SPA design without requiring full page refreshes. When a user navigates backwards after viewing a participant's dashboard, the landing page will render instantly with zero dynamic overhead.
+
+### 5. Complete Administrative Segregation
+- **Decision**: Keep the administrative portal (`web/admin.html`) completely decoupled and distinct from the public landing page routing. Do not expose any public links or navigation points leading to administrative pages on the landing page.
+- **Rationale**: Mitigates security discoverability risk, preserves visual simplicity on the landing page, and maintains strict separation of concerns for AWS Free Tier optimization.
+
 ---
 
 ## Technical Specifications & Variables

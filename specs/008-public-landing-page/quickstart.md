@@ -55,3 +55,19 @@ Ensure you have Python 3.12+ installed.
   3. Verify that:
      - The welcoming introductory landing page card is **completely bypassed and invisible** from the very first frame.
      - The interface immediately renders Bob Camper's stats dashboard and initiates telemetry sync fetches.
+
+---
+
+### Validation Scenario 4: Popstate History Navigation (Back/Forward Buttons)
+- **Steps**:
+  1. Load [http://localhost:8080/index.html](http://localhost:8080/index.html).
+  2. Verify that the `#intro-landing-view` container is **fully visible**.
+  3. Click the button labeled **"Alice Smith"**. Verify `#dashboard-view` displays Alice's stats, and the URL is `?u=ali`.
+  4. Click the browser's **Back** button.
+  5. Verify that:
+     - The URL changes back to [http://localhost:8080/index.html](http://localhost:8080/index.html).
+     - `#dashboard-view` is hidden.
+     - `#intro-landing-view` is displayed immediately without a full page reload.
+  6. Click the browser's **Forward** button.
+  7. Verify that `#intro-landing-view` is hidden, and `#dashboard-view` is shown with Alice's stats.
+

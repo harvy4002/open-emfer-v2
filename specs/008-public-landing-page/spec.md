@@ -21,6 +21,20 @@ With this update:
 2. **Instant Bypassing for Bookmarks and QR Scans**: When accessed with a valid camper query parameter (such as `?u=ali`, `?u=hvy`, `?u=bob`, or `?u=combined`), the static introductory content is completely bypassed/hidden, loading that participant's telemetry dashboard instantly.
 3. **Communal Directory**: The informational landing page provides clear, easily clickable buttons for each participant, allowing users to dive into individual dashboards with a single tap.
 
+### Out of Scope
+- **Participant Admin Portal Integration**: The administrative page (`admin.html`) and associated logging/manual entry features are completely separate and out of scope; no links or redirection pathways will be visible on the public landing page.
+- **Dynamic Participant Management**: Adding, editing, or deleting active tracking participants cannot be performed dynamically from the landing page or a dynamic API configuration.
+
+---
+
+## Clarifications
+
+### Session 2026-07-13
+
+- Q: Participant Directory Storage Pattern → A: Hardcoded client-side list (Option A). Define the participant list and route mappings directly in static client JavaScript code to keep infrastructure cost at zero (AWS Free Tier optimized).
+- Q: Browser Back/Forward Button Navigation (Popstate) → A: Full popstate handling (Option A). Intercept browser back/forward popstate events to seamlessly toggle view states in the single-page app without forcing a full page reload.
+- Q: Public Landing Page Boundaries and Admin Separation → A: Complete Segregation (Option A). Keep the public landing page strictly focused on public informational content; administrative access (`admin.html`) is completely out-of-scope and separate.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -87,6 +101,8 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 - **FR-005 (URL Parameter State Updates)**: Clicking any participant portal button on the landing page MUST update the browser's URL query parameter using the standard History API (`pushState`), and trigger the page to transition and render the dashboard view without requiring a full page refresh.
 - **FR-006 (Touch-Target Usability)**: All interactive portal buttons and links on the landing page MUST maintain a minimum height/width of **48px** to guarantee reliable tap targets on mobile viewports.
 - **FR-007 (Responsive Layout)**: Both the landing page introduction text and the telemetry dashboard panels MUST be fully responsive, stacking vertically on smaller viewports (down to 320px width) with zero horizontal scrolls.
+- **FR-008 (History Back/Forward Navigation)**: The application MUST listen for standard browser `popstate` events, dynamically toggling the active view container (Introduction vs. specific user dashboard) to handle browser Back and Forward button interactions correctly without requiring a full page reload.
+- **FR-009 (Static Directory Hosting)**: The list of active tracking participants (`hvy`, `ali`, `bob`, `combined`) and their metadata MUST be hardcoded within the static frontend assets (`web/js/app.js`), preventing dynamic backend requests or DB queries on load, optimizing for zero-cost static S3 hosting (AWS Free Tier optimized).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -100,7 +116,7 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 
 - **SC-001**: Loading the root URL without parameters displays the Project Introduction and quick-links in under 1.5 seconds.
 - **SC-002**: Navigating to `index.html?u=ali` renders Alice's active dashboard, with 100% of the project introduction text successfully hidden.
-- **SC-003**: Clicking any participant button on the landing page transitions the page to that user's dashboard in under 500ms, with zero visual layout overflows or overlaps.
+- **SC-003**: Clicking any participant button on the landing page or using browser Back/Forward navigation transitions the page to the target view state in under 500ms, with zero visual layout overflows or overlaps.
 - **SC-004**: All portal navigation buttons pass 100% of mobile-responsive touch validation tests with at least a 48px sizing envelope.
 
 ---
