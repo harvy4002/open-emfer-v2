@@ -481,6 +481,12 @@ def lambda_handler(event, context):
     try:
         # Extract query params and paths
         path = event.get("rawPath") or "/"
+        # Normalize API Gateway stage path prefix (Constitution Principle VIII robust loops)
+        if path.startswith("/prod/"):
+            path = path[5:]
+        elif path == "/prod":
+            path = "/"
+            
         http_method = event.get("requestContext", {}).get("http", {}).get("method", "GET")
         query_params_raw = event.get("queryStringParameters") or {}
         headers = event.get("headers") or {}
