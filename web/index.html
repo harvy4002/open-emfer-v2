@@ -148,8 +148,8 @@
           <div class="metric-card">
             <div class="metric-title">Camper Activity</div>
             <div class="metric-value" style="font-size: 2rem;" id="camper-status-badge">Chilling</div>
-            <div class="mt-2" style="max-height: 80px; overflow: hidden; border-radius: 4px;">
-              <img id="camper-status-image" src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=300&q=80" style="width: 100%; object-fit: cover;" alt="Camper status visual"/>
+            <div class="mt-2" style="max-height: 250px; overflow: hidden; border-radius: 4px; display: flex; align-items: center; justify-content: center; background-color: #1a1c1e;">
+              <img id="camper-status-image" src="/harvy_status/harvy_normal.jpg" onerror="if (this.src.indexOf('_normal.jpg') !== -1) { this.onerror=null; this.src='/harvy_status/harvy_normal.jpg'; } else { this.src='/' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg'; }" style="width: 100%; max-height: 250px; object-fit: cover;" alt="Camper status visual"/>
             </div>
           </div>
         </div>

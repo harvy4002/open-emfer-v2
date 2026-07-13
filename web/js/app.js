@@ -32,16 +32,7 @@ if (hasUserParam && !USER_NAMES[activeUser]) {
   hasUserParam = false;
 }
 
-// Mood image mapping based on camper status (FR-007)
-const STATUS_IMAGES = {
-  Chilling: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=300&q=80", // camp friends
-  Roaming: "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=300&q=80",  // tents hiking
-  Drinking: "https://images.unsplash.com/photo-1436018626274-89acd67ae29e?auto=format&fit=crop&w=300&q=80", // cups cheers
-  Eating: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=300&q=80",   // camp food
-  Happy: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=300&q=80",    // summer happy
-  Coding: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=300&q=80",   // laptop
-  Sleeping: "https://images.unsplash.com/photo-1444858291040-58fe75488333?auto=format&fit=crop&w=300&q=80"  // sleeping
-};
+// Mood image mapping (Deprecate STATUS_IMAGES in favor of 009-camper-profile-status dynamic folder mappings)
 
 function initUI() {
   const introEl = document.getElementById("intro-landing-view");
@@ -198,8 +189,10 @@ async function fetchTelemetry() {
       const statusText = statusData.status || "Chilling";
       document.getElementById("camper-status-badge").textContent = statusText;
 
-      const fallbackImage = STATUS_IMAGES[statusText] || STATUS_IMAGES["Chilling"];
-      document.getElementById("camper-status-image").setAttribute("src", fallbackImage);
+      // Resolve status photo file path dynamically based on 009-camper-profile-status specs (FR-001/FR-003/FR-006)
+      const normalizedStatus = statusText.toLowerCase();
+      const dynamicImage = `/${activeUser}_status/${activeUser}_${normalizedStatus}.jpg`;
+      document.getElementById("camper-status-image").setAttribute("src", dynamicImage);
     }
 
     // 4. Fetch Monzo expenses
