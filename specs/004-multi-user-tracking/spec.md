@@ -66,6 +66,7 @@ As a camp visitor, I want to access a combined public dashboard showing accumula
 - **FR-006 (Mobile-First Layout)**: The public dashboard MUST prioritize mobile-first display principles, utilizing responsive column structures (via Bulma CSS or custom flexbox) that stack cleanly on vertical mobile screens (down to 320px width) with zero horizontal scrolling.
 - **FR-007 (Touch-Target Usability)**: All interactive controls, links, and buttons on the public dashboard MUST maintain a minimum height of **48px** to guarantee reliable tap targets for one-handed field operations.
 - **FR-008 (QR Code URL Optimization)**: The public dashboard URL format MUST be optimized for physical QR code scanning in the field by utilizing the shortest possible unique user identifier keys (3-4 characters, alphanumeric), minimizing the QR grid density for sub-second scanner lock under low field lighting.
+- **FR-009 (Administrative Key Isolation)**: In production environments, each camper MUST use a unique, cryptographically unguessable administrative tracker key to authorize mutative telemetry logs. The key validation logic MUST prevent a user from submitting data to another user's dashboard context using a guessable, sequential, or derivative key structure.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -84,7 +85,7 @@ As a camp visitor, I want to access a combined public dashboard showing accumula
 
 ## Assumptions
 
-- **Assumption 1**: A single global `tracker_key` authorization token is shared among all trusted logging campers.
+- **Assumption 1**: In local development, a standard placeholder key (mock-super-secret-key) is supported; however, in production, each participant utilizes a unique, unguessable administrative tracker key to enforce multi-tenant isolation.
 - **Assumption 2**: Dynamic user profile registration is permitted—submitting a write for an unrecognized `user_id` automatically instantiates their aggregate partition.
 - **Assumption 3**: S3 static frontend files can extract URL parameters via standard browser `URLSearchParams` APIs without server-side routing (SSR) requirements.
 - **Assumption 4**: The frontend JavaScript contains a hardcoded mapping of short user identifiers (e.g. `ali`) to the corresponding full display names (e.g. `Alice`) to display descriptive headings in the UI.
