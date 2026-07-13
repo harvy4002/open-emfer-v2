@@ -54,6 +54,14 @@ resource "aws_iam_policy" "lambda_privileges" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = aws_secretsmanager_secret.secrets.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
       }
     ]
   })
