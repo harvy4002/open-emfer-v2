@@ -17,9 +17,16 @@ from datetime import datetime
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
-            if o % 1 == 0:
-                return int(o)
-            return float(o)
+            try:
+                if o.is_nan():
+                    return None
+                if o.is_infinite():
+                    return "Infinity" if o > 0 else "-Infinity"
+                if o == o.to_integral_value():
+                    return int(o)
+                return float(o)
+            except Exception:
+                return float(o)
         return super(DecimalEncoder, self).default(o)
 
 def json_dumps(obj, **kwargs):
@@ -34,13 +41,23 @@ DB_FILE = os.path.join(os.path.dirname(__file__), "..", "web", "web_local_db.jso
 IS_AWS = "AWS_LAMBDA_FUNCTION_NAME" in os.environ
 TABLE_NAME = os.environ.get("DYNAMODB_TABLE_NAME", "open_emfer_v2_production")
 
-# Lazy-load boto3 in AWS environment to preserve cold start times
-if IS_AWS:
-    import boto3
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(TABLE_NAME)
-else:
-    table = None
+table = None
+
+def get_db_table():
+    global table
+    if table is not None:
+        return table
+    if IS_AWS:
+        try:
+            import boto3
+            # Explicitly specify region to prevent region-load errors (Constitution Principle VIII robust loops)
+            dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+            table = dynamodb.Table(TABLE_NAME)
+            return table
+        except Exception as e:
+            print(f"Lazy DynamoDB Table Init Error: {e}")
+            return None
+    return None
 
 # Default database seed structure matching single-table patterns
 DEFAULT_DB = {
@@ -86,9 +103,10 @@ def save_local_db(db):
 
 def db_get_item(event, type_val):
     """Fetches an item from either live DynamoDB or the local JSON file database."""
-    if IS_AWS:
+    tbl = get_db_table()
+    if tbl is not None:
         try:
-            res = table.get_item(Key={"event": event, "type": type_val})
+            res = tbl.get_item(Key={"event": event, "type": type_val})
             return res.get("Item")
         except Exception as e:
             print(f"DynamoDB GET Error: {e}")
@@ -102,12 +120,13 @@ def db_put_item(event, type_val, attributes):
     attributes["event"] = event
     attributes["type"] = type_val
     
-    if IS_AWS:
+    tbl = get_db_table()
+    if tbl is not None:
         try:
             # DynamoDB requires floats to be represented as Decimal numbers or parsed
             # Convert any floats to strings/decimals to prevent boto3 type exceptions
             safe_attributes = json.loads(json_dumps(attributes), parse_float=str)
-            table.put_item(Item=safe_attributes)
+            tbl.put_item(Item=safe_attributes)
             return True
         except Exception as e:
             print(f"DynamoDB PUT Error: {e}")
