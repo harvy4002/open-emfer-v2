@@ -9,8 +9,23 @@ Zero-dependency, Dual-Mode Server for Open EMF Camper (V2).
 import os
 import json
 import urllib.parse
+import decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
+
+# Custom Decimal Encoder to ensure DynamoDB types are JSON-serializable (Constitution Principle VI/VIII compliance)
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            if o % 1 == 0:
+                return int(o)
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
+
+def json_dumps(obj, **kwargs):
+    if "cls" not in kwargs:
+        kwargs["cls"] = DecimalEncoder
+    return json.dumps(obj, **kwargs)
 
 PORT = 3000
 DB_FILE = os.path.join(os.path.dirname(__file__), "..", "web", "web_local_db.json")
@@ -91,7 +106,7 @@ def db_put_item(event, type_val, attributes):
         try:
             # DynamoDB requires floats to be represented as Decimal numbers or parsed
             # Convert any floats to strings/decimals to prevent boto3 type exceptions
-            safe_attributes = json.loads(json.dumps(attributes), parse_float=str)
+            safe_attributes = json.loads(json_dumps(attributes), parse_float=str)
             table.put_item(Item=safe_attributes)
             return True
         except Exception as e:
@@ -142,7 +157,7 @@ def process_api_get(path, query_params):
             response_payload["beer_drinks"] = int(combined_aggs.get("beer_drinks", 0))
             response_payload["leaderboard"] = combined_aggs.get("leaderboard", [])
 
-        return 200, headers, json.dumps(response_payload, indent=2)
+        return 200, headers, json_dumps(response_payload, indent=2)
         
     elif path == "/history":
         user_id = query_params.get("user_id", "hvy")
@@ -174,7 +189,7 @@ def process_api_get(path, query_params):
             except Exception:
                 pass
         
-        return 200, headers, json.dumps({
+        return 200, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
             "cumulative_distance_km": dist,
@@ -193,7 +208,7 @@ def process_api_get(path, query_params):
         except ValueError:
             exp = 0.0
             
-        return 200, headers, json.dumps({
+        return 200, headers, json_dumps({
             "status": "success",
             "total_expenditure_gbp": exp,
             "transactions": monzo_state.get("transactions", [])
@@ -207,7 +222,7 @@ def process_api_post(path, payload, auth_header):
     
     # Token authorization check (Principle V)
     if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps"] and auth_header != "mock-super-secret-key":
-        return 401, headers, json.dumps({
+        return 401, headers, json_dumps({
             "error": "Unauthorized",
             "message": "Invalid or missing tracker key"
         })
@@ -282,7 +297,7 @@ def process_api_post(path, payload, auth_header):
         
         db_put_item("camper#aggregates#combined", "totals", combined_totals)
         
-        return 201, headers, json.dumps({
+        return 201, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
             "category": event_type,
@@ -349,7 +364,7 @@ def process_api_post(path, payload, auth_header):
                 
         db_put_item(dev_key, "state", device_state)
         
-        return 201, headers, json.dumps({
+        return 201, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
             "staleness_seconds": staleness_seconds
@@ -368,7 +383,7 @@ def process_api_post(path, payload, auth_header):
         
         db_put_item("camper#aggregates#combined", "totals", combined_totals)
         
-        return 201, headers, json.dumps({
+        return 201, headers, json_dumps({
             "status": "success",
             "user_id": user_id
         })
@@ -403,7 +418,7 @@ def process_api_post(path, payload, auth_header):
             
         db_put_item("monzo#transactions", "latest", monzo_latest)
         
-        return 201, headers, json.dumps({
+        return 201, headers, json_dumps({
             "status": "success",
             "id": tx_id,
             "total_expenditure_gbp": monzo_latest["total_expenditure_gbp"]
@@ -429,7 +444,7 @@ def process_api_post(path, payload, auth_header):
 
         db_put_item(dev_key, "state", device_state)
 
-        return 201, headers, json.dumps({
+        return 201, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
             "cumulative_steps": steps
