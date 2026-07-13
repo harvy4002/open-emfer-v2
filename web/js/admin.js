@@ -9,9 +9,10 @@ const API_BASE = isLocal ? "http://localhost:3000" : "https://01uy6frz0h.execute
 
 // Hardcoded user profiles names mapping (Assumption 4)
 const USER_NAMES = {
-  hvy: "Harvy Atwal",
-  ali: "Alice Smith",
-  bob: "Bob Camper"
+  hvy: "Harvy",
+  cha: "Charlotte",
+  ash: "Ash",
+  tin: "Tina"
 };
 
 // Extract compact user parameter 'u' (FR-006 / FR-007)
@@ -31,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const displayName = USER_NAMES[activeUser] || `${activeUser.toUpperCase()}'s Dashboard`;
   document.getElementById("camperNameHeader").textContent = `${displayName}'s Logging Portal`;
   document.getElementById("camperSubHeader").textContent = `Locked context: ${activeUser.toUpperCase()}`;
-  
+
   // Initialize Tracker Key input UI
   if (TRACKER_KEY) {
     document.getElementById("trackerKeyInput").value = TRACKER_KEY;
@@ -180,6 +181,51 @@ async function submitLog(eventCategory, typeName, reverse = false) {
       // Re-apply zero floor disabled states
       syncState();
     }, 500);
+  }
+}
+
+async function submitManualSteps() {
+  if (submitLocked) return;
+  if (!TRACKER_KEY) {
+    showFlash("Error: Please provide a valid Tracker Key first", "error");
+    return;
+  }
+  const stepsInput = document.getElementById("manualStepsInput");
+  const stepVal = parseInt(stepsInput.value.trim(), 10);
+  if (isNaN(stepVal) || stepVal < 0) {
+    showFlash("Please enter a valid positive step count", "error");
+    return;
+  }
+
+  submitLocked = true;
+  const payload = {
+    user_id: activeUser,
+    steps: stepVal
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/steps`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": TRACKER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 201 || response.status === 200) {
+      showFlash(`Success: step count updated to ${stepVal.toLocaleString()}`, "success");
+      stepsInput.value = "";
+      await syncState();
+    } else {
+      const err = await response.json();
+      showFlash(`Failed: ${err.message || 'Server error'}`, "error");
+    }
+  } catch (error) {
+    console.error(error);
+    showFlash(`Error: Network offline or blocked`, "error");
+  } finally {
+    submitLocked = false;
   }
 }
 

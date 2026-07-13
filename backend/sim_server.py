@@ -206,7 +206,7 @@ def process_api_post(path, payload, auth_header):
     headers = {"Content-Type": "application/json"}
     
     # Token authorization check (Principle V)
-    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation"] and auth_header != "mock-super-secret-key":
+    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps"] and auth_header != "mock-super-secret-key":
         return 401, headers, json.dumps({
             "error": "Unauthorized",
             "message": "Invalid or missing tracker key"
@@ -407,6 +407,32 @@ def process_api_post(path, payload, auth_header):
             "status": "success",
             "id": tx_id,
             "total_expenditure_gbp": monzo_latest["total_expenditure_gbp"]
+        })
+
+    elif path == "/steps":
+        user_id = payload.get("user_id") or "hvy"
+        steps = int(payload.get("steps") or 0)
+        timestamp = datetime.now().isoformat() + "Z"
+
+        dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+        device_state = db_get_item(dev_key, "state") or {
+            "last_known_latitude": 51.5074,
+            "last_known_longitude": -0.1278,
+            "last_known_timestamp": timestamp,
+            "cumulative_distance_km": 0.0,
+            "cumulative_steps": 0,
+            "location_history": []
+        }
+
+        device_state["cumulative_steps"] = steps
+        device_state["cumulative_distance_km"] = steps * 0.00063
+
+        db_put_item(dev_key, "state", device_state)
+
+        return 201, headers, json.dumps({
+            "status": "success",
+            "user_id": user_id,
+            "cumulative_steps": steps
         })
         
     return 404, headers, "Not Found"
