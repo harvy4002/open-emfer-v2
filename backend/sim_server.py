@@ -37,6 +37,15 @@ def json_dumps(obj, **kwargs):
 PORT = 3000
 DB_FILE = os.path.join(os.path.dirname(__file__), "..", "web", "web_local_db.json")
 
+# Participant tracker keys mapping (Constitution Principle V multi-tenant lock)
+USER_KEYS = {
+    "hvy": "mock-super-secret-key",
+    "cha": "cha-mock-secret-key",
+    "ash": "ash-mock-secret-key",
+    "tin": "tin-mock-secret-key",
+    "combined": "mock-super-secret-key"
+}
+
 # AWS Environment detection
 IS_AWS = "AWS_LAMBDA_FUNCTION_NAME" in os.environ
 TABLE_NAME = os.environ.get("DYNAMODB_TABLE_NAME", "open_emfer_v2_production")
@@ -239,8 +248,12 @@ def process_api_post(path, payload, auth_header):
     """Processes POST routes and writes state updates to the database."""
     headers = {"Content-Type": "application/json"}
     
+    # Dynamically resolve expected key per participant to ensure administrative segregation (Principle V)
+    user_id = payload.get("user_id") or "hvy"
+    expected_key = USER_KEYS.get(user_id, "mock-super-secret-key")
+    
     # Token authorization check (Principle V)
-    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps"] and auth_header != "mock-super-secret-key":
+    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps"] and auth_header != expected_key:
         return 401, headers, json_dumps({
             "error": "Unauthorized",
             "message": "Invalid or missing tracker key"
