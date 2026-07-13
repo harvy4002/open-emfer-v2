@@ -478,53 +478,72 @@ def lambda_handler(event, context):
     Core entrypoint invoked by AWS API Gateway v2.
     Translates raw API Gateway JSON events into standard router responses.
     """
-    # Extract query params and paths
-    path = event.get("rawPath") or "/"
-    http_method = event.get("requestContext", {}).get("http", {}).get("method", "GET")
-    query_params_raw = event.get("queryStringParameters") or {}
-    headers = event.get("headers") or {}
-    
-    # Handle CORS Preflight OPTIONS requests
-    if http_method == "OPTIONS":
+    try:
+        # Extract query params and paths
+        path = event.get("rawPath") or "/"
+        http_method = event.get("requestContext", {}).get("http", {}).get("method", "GET")
+        query_params_raw = event.get("queryStringParameters") or {}
+        headers = event.get("headers") or {}
+        
+        # Handle CORS Preflight OPTIONS requests
+        if http_method == "OPTIONS":
+            return {
+                "statusCode": 204,
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization, TRACKER_KEY, tracker_key"
+                },
+                "body": ""
+            }
+            
+        # Standardize Authorization check
+        auth_header = headers.get("authorization") or headers.get("tracker_key") or headers.get("tracker_key")
+        
+        if http_method == "GET":
+            status, res_headers, body = process_api_get(path, query_params_raw)
+        elif http_method == "POST":
+            post_body_raw = event.get("body") or ""
+            # Handle base64 decoded bodies if needed
+            if event.get("isBase64Encoded"):
+                import base64
+                post_body_raw = base64.b64decode(post_body_raw).decode("utf-8")
+            try:
+                payload = json.loads(post_body_raw) if post_body_raw else {}
+            except Exception:
+                payload = {}
+            status, res_headers, body = process_api_post(path, payload, auth_header)
+        else:
+            status, res_headers, body = 405, {"Content-Type": "application/json"}, "Method Not Allowed"
+            
+        # Inject CORS into all responses
+        res_headers["Access-Control-Allow-Origin"] = "*"
+        res_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        res_headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, TRACKER_KEY, tracker_key"
+        
         return {
-            "statusCode": 204,
+            "statusCode": status,
+            "headers": res_headers,
+            "body": body
+        }
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        return {
+            "statusCode": 500,
             "headers": {
+                "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type, Authorization, TRACKER_KEY, tracker_key"
             },
-            "body": ""
+            "body": json.dumps({
+                "error": "Internal Server Error",
+                "message": str(e),
+                "traceback": tb,
+                "event_context": str(event)[:1000]
+            })
         }
-        
-    # Standardize Authorization check
-    auth_header = headers.get("authorization") or headers.get("tracker_key") or headers.get("tracker_key")
-    
-    if http_method == "GET":
-        status, res_headers, body = process_api_get(path, query_params_raw)
-    elif http_method == "POST":
-        post_body_raw = event.get("body") or ""
-        # Handle base64 decoded bodies if needed
-        if event.get("isBase64Encoded"):
-            import base64
-            post_body_raw = base64.b64decode(post_body_raw).decode("utf-8")
-        try:
-            payload = json.loads(post_body_raw) if post_body_raw else {}
-        except Exception:
-            payload = {}
-        status, res_headers, body = process_api_post(path, payload, auth_header)
-    else:
-        status, res_headers, body = 405, {"Content-Type": "application/json"}, "Method Not Allowed"
-        
-    # Inject CORS into all responses
-    res_headers["Access-Control-Allow-Origin"] = "*"
-    res_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    res_headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, TRACKER_KEY, tracker_key"
-    
-    return {
-        "statusCode": status,
-        "headers": res_headers,
-        "body": body
-    }
 
 # --- Local Standalone HTTP Socket Server ---
 
