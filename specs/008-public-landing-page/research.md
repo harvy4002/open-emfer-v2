@@ -37,7 +37,8 @@
   const userParam = urlParams.get("u") || urlParams.get("user_id");
   ```
 - **Camper Mappings**:
-  - `hvy` -> "Harvy Atwal"
-  - `ali` -> "Alice Smith"
-  - `bob` -> "Bob Camper"
+  - `hvy` -> "Harvy"
+  - `cha` -> "Charlotte"
+  - `ash` -> "Ash"
+  - `tin` -> "Tina"
   - `combined` -> "Combined Camper Stats"

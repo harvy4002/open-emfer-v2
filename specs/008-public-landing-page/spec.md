@@ -18,7 +18,7 @@ Previously, loading the root dashboard domain (`https://emf.harvinderatwal.com/`
 
 With this update:
 1. **The Root Domain acts as an Informational Landing Page**: When accessed with no user query parameters, the page displays a welcoming, high-contrast introduction explaining what the Open EMF Camper tracking project is, what telemetry is gathered, and how to use it.
-2. **Instant Bypassing for Bookmarks and QR Scans**: When accessed with a valid camper query parameter (such as `?u=ali`, `?u=hvy`, `?u=bob`, or `?u=combined`), the static introductory content is completely bypassed/hidden, loading that participant's telemetry dashboard instantly.
+2. **Instant Bypassing for Bookmarks and QR Scans**: When accessed with a valid camper query parameter (such as `?u=cha`, `?u=hvy`, `?u=ash`, `?u=tin`, or `?u=combined`), the static introductory content is completely bypassed/hidden, loading that participant's telemetry dashboard instantly.
 3. **Communal Directory**: The informational landing page provides clear, easily clickable buttons for each participant, allowing users to dive into individual dashboards with a single tap.
 
 ### Out of Scope
@@ -34,6 +34,7 @@ With this update:
 - Q: Participant Directory Storage Pattern → A: Hardcoded client-side list (Option A). Define the participant list and route mappings directly in static client JavaScript code to keep infrastructure cost at zero (AWS Free Tier optimized).
 - Q: Browser Back/Forward Button Navigation (Popstate) → A: Full popstate handling (Option A). Intercept browser back/forward popstate events to seamlessly toggle view states in the single-page app without forcing a full page reload.
 - Q: Public Landing Page Boundaries and Admin Separation → A: Complete Segregation (Option A). Keep the public landing page strictly focused on public informational content; administrative access (`admin.html`) is completely out-of-scope and separate.
+- Q: Dynamic Tracker User Accounts → A: Hardcode the 4 active participants: Harvy (`hvy`), Charlotte (`cha`), Ash (`ash`), and Tina (`tin`) along with their 3-letter shortcodes.
 
 ---
 
@@ -49,37 +50,37 @@ As a public visitor navigating to the project's root domain, I want to see an in
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor navigates to the root URL with no query parameters, **When** the page loads, **Then** they see introductory paragraphs about EMF Camp, steps/drinks trackers, and a list of active participants.
+1. **Given** a visitor navigates to the root URL with no query parameters, **When** the page loads, **Then** they see introductory paragraphs about EMF Camp, steps/drinks trackers, and a list of active participants (Harvy, Charlotte, Ash, Tina).
 2. **Given** the introductory landing page is active, **When** viewed, **Then** all live telemetry charts and individual widget panels are hidden from view.
 
 ---
 
 ### User Story 2 - Seamless Telemetry Dashboard Bypass (Priority: P1)
 
-As a camp follower scanning a camper's gear QR code (e.g. `https://emf.harvinderatwal.com/?u=ali`), I want the website to instantly load Alice's personal telemetry dashboard, bypassing the static introduction completely, so that I can monitor her active camp stats on-the-go.
+As a camp follower scanning a camper's gear QR code (e.g. `https://emf.harvinderatwal.com/?u=cha`), I want the website to instantly load Charlotte's personal telemetry dashboard, bypassing the static introduction completely, so that I can monitor her active camp stats on-the-go.
 
 **Why this priority**: Crucial for field usability. Camphouse scans must be fast; attendees scanning QR codes on gear do not want to see static intro text on every scan.
 
-**Independent Test**: Load `http://localhost:8080/index.html?u=ali` in a browser. Verify that the informational project introduction is completely hidden, and Alice's telemetry dashboard widgets load immediately.
+**Independent Test**: Load `http://localhost:8080/index.html?u=cha` in a browser. Verify that the informational project introduction is completely hidden, and Charlotte's telemetry dashboard widgets load immediately.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user opens a link containing `?u=ali`, **When** the page resolves, **Then** the introduction card is hidden, the main telemetry panel displays "Alice Smith's Dashboard", and dynamic fetches load Alice's live values.
+1. **Given** a user opens a link containing `?u=cha`, **When** the page resolves, **Then** the introduction card is hidden, the main telemetry panel displays "Charlotte's Dashboard", and dynamic fetches load Charlotte's live values.
 2. **Given** a user opens a link containing `?u=combined`, **When** the page resolves, **Then** the introduction is hidden and the global camper leaderboard displays.
 
 ---
 
 ### User Story 3 - Interactive Camper Portal Directory (Priority: P2)
 
-As a landing page visitor, I want to see clear, high-contrast quick links/buttons for each participant (Harvy, Alice, Bob) and the Combined Stats view, so that I can easily navigate into any dashboard with a single click.
+As a landing page visitor, I want to see clear, high-contrast quick links/buttons for each participant (Harvy, Charlotte, Ash, Tina) and the Combined Stats view, so that I can easily navigate into any dashboard with a single click.
 
 **Why this priority**: Integrates the introductory landing page with the dashboard system, acting as a portal index.
 
-**Independent Test**: Tap the "Alice Smith" portal button on the landing page, verify that the browser URL updates to `?u=ali`, and the page transitions seamlessly to load her dashboard.
+**Independent Test**: Tap the "Charlotte" portal button on the landing page, verify that the browser URL updates to `?u=cha`, and the page transitions seamlessly to load her dashboard.
 
 **Acceptance Scenarios**:
 
-1. **Given** the informational landing page is displayed, **When** the visitor clicks on the "Bob Camper" button, **Then** the page dynamically updates the browser address history and re-renders, displaying Bob's telemetry panel.
+1. **Given** the informational landing page is displayed, **When** the visitor clicks on the "Charlotte" button, **Then** the page dynamically updates the browser address history and re-renders, displaying Charlotte's telemetry panel.
 
 ---
 
@@ -96,13 +97,13 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 
 - **FR-001 (Root Path Routing)**: The frontend script MUST check on load if a valid query parameter `u` (or `user_id`) is present in the URL.
 - **FR-002 (Introductory Landing View)**: If the user parameter `u` is absent or invalid, the page MUST display the informational introduction container, explaining the Open EMF Camper project, LoRa telemetry, step sensors, and Monzo sync.
-- **FR-003 (Telemetry Dashboard View)**: If a valid user parameter `u` (matching `hvy`, `ali`, `bob`, or `combined`) is present, the page MUST show the corresponding telemetry dashboard and hide the project introduction container completely.
-- **FR-004 (Interactive Camper Buttons)**: The introductory landing view MUST provide dedicated, mobile-optimized buttons for each participant (Harvy, Alice, Bob) and the Combined dashboard.
+- **FR-003 (Telemetry Dashboard View)**: If a valid user parameter `u` (matching `hvy`, `cha`, `ash`, `tin`, or `combined`) is present, the page MUST show the corresponding telemetry dashboard and hide the project introduction container completely.
+- **FR-004 (Interactive Camper Buttons)**: The introductory landing view MUST provide dedicated, mobile-optimized buttons for each participant (Harvy, Charlotte, Ash, Tina) and the Combined dashboard.
 - **FR-005 (URL Parameter State Updates)**: Clicking any participant portal button on the landing page MUST update the browser's URL query parameter using the standard History API (`pushState`), and trigger the page to transition and render the dashboard view without requiring a full page refresh.
 - **FR-006 (Touch-Target Usability)**: All interactive portal buttons and links on the landing page MUST maintain a minimum height/width of **48px** to guarantee reliable tap targets on mobile viewports.
 - **FR-007 (Responsive Layout)**: Both the landing page introduction text and the telemetry dashboard panels MUST be fully responsive, stacking vertically on smaller viewports (down to 320px width) with zero horizontal scrolls.
 - **FR-008 (History Back/Forward Navigation)**: The application MUST listen for standard browser `popstate` events, dynamically toggling the active view container (Introduction vs. specific user dashboard) to handle browser Back and Forward button interactions correctly without requiring a full page reload.
-- **FR-009 (Static Directory Hosting)**: The list of active tracking participants (`hvy`, `ali`, `bob`, `combined`) and their metadata MUST be hardcoded within the static frontend assets (`web/js/app.js`), preventing dynamic backend requests or DB queries on load, optimizing for zero-cost static S3 hosting (AWS Free Tier optimized).
+- **FR-009 (Static Directory Hosting)**: The list of active tracking participants (`hvy`, `cha`, `ash`, `tin`, `combined`) and their metadata MUST be hardcoded within the static frontend assets (`web/js/app.js`), preventing dynamic backend requests or DB queries on load, optimizing for zero-cost static S3 hosting (AWS Free Tier optimized).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -115,7 +116,7 @@ As a landing page visitor, I want to see clear, high-contrast quick links/button
 ### Measurable Outcomes
 
 - **SC-001**: Loading the root URL without parameters displays the Project Introduction and quick-links in under 1.5 seconds.
-- **SC-002**: Navigating to `index.html?u=ali` renders Alice's active dashboard, with 100% of the project introduction text successfully hidden.
+- **SC-002**: Navigating to `index.html?u=cha` renders Charlotte's active dashboard, with 100% of the project introduction text successfully hidden.
 - **SC-003**: Clicking any participant button on the landing page or using browser Back/Forward navigation transitions the page to the target view state in under 500ms, with zero visual layout overflows or overlaps.
 - **SC-004**: All portal navigation buttons pass 100% of mobile-responsive touch validation tests with at least a 48px sizing envelope.
 

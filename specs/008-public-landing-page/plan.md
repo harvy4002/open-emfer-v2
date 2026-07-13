@@ -8,7 +8,7 @@
 
 The **Public Landing Page and Dynamic Dashboard Routing** feature transforms the root of the main dashboard site. 
 
-This implementation plan establishes the design for a single-page conditional toggle inside `web/index.html`. When loaded without any camper identifiers, the DOM renders a clean, welcoming, informational landing page panel (`#intro-landing-view`) explaining the EMF Camp project goals. If accessed with specific camper parameters (like `?u=ali`), it completely bypasses the static introduction text and renders that participant's telemetry dashboard widgets.
+This implementation plan establishes the design for a single-page conditional toggle inside `web/index.html`. When loaded without any camper identifiers, the DOM renders a clean, welcoming, informational landing page panel (`#intro-landing-view`) explaining the EMF Camp project goals. If accessed with specific camper parameters (like `?u=cha`), it completely bypasses the static introduction text and renders that participant's telemetry dashboard widgets.
 
 ---
 
@@ -30,7 +30,7 @@ This implementation plan establishes the design for a single-page conditional to
 
 **Constraints**: Mobile-responsive structural compliance down to 320px screen widths, tactile 48px touch targets for navigation.
 
-**Scale/Scope**: Supports 3 direct camper dashboards (`hvy`, `ali`, `bob`) and the `combined` totals stats view.
+**Scale/Scope**: Supports 4 direct camper dashboards (`hvy`, `cha`, `ash`, `tin`) and the `combined` totals stats view.
 
 ---
 

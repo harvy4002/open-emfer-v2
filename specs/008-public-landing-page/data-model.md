@@ -8,7 +8,7 @@ At runtime, the single-page application (`web/index.html`) maintains a virtual s
 
 ### DOM View Structure
 - **Container 1**: `#intro-landing-view` (Informational portal panel)
-  - Key sections: Project Introduction paragraphs, Active Participant quick link buttons (`hvy`, `ali`, `bob`, `combined`).
+  - Key sections: Project Introduction paragraphs, Active Participant quick link buttons (`hvy`, `cha`, `ash`, `tin`, `combined`).
 - **Container 2**: `#dashboard-view` (Telemetry widgets panel)
   - Key sections: Title header, metric cards, chart panels, historical logs list.
 
@@ -18,9 +18,10 @@ The visibility states of the containers map to the presence and validation of th
 | Query Parameter `u` value | `#intro-landing-view` visibility | `#dashboard-view` visibility | Active Dashboard Context |
 |-------------------------|--------------------------------|------------------------------|--------------------------|
 | `(absent)` / `null` | **VISIBLE** | **HIDDEN** | N/A (Project Landing Page) |
-| `hvy` | **HIDDEN** | **VISIBLE** | Harvy Atwal's stats |
-| `ali` | **HIDDEN** | **VISIBLE** | Alice Smith's stats |
-| `bob` | **HIDDEN** | **VISIBLE** | Bob Camper's stats |
+| `hvy` | **HIDDEN** | **VISIBLE** | Harvy's stats |
+| `cha` | **HIDDEN** | **VISIBLE** | Charlotte's stats |
+| `ash` | **HIDDEN** | **VISIBLE** | Ash's stats |
+| `tin` | **HIDDEN** | **VISIBLE** | Tina's stats |
 | `combined` | **HIDDEN** | **VISIBLE** | Combined Camper stats |
 | `(any other value)` | **VISIBLE** | **HIDDEN** | Fallback (displays intro page) |
 

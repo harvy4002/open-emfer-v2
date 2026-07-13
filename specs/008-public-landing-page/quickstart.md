@@ -32,29 +32,29 @@ Ensure you have Python 3.12+ installed.
   2. Verify that:
      - The welcoming project introduction card is **fully visible**.
      - Paragraphs explaining EMF Camp, LoRa telemetry, steps tracking, and expenses are legible.
-     - The participant portal buttons ("Harvy Atwal", "Alice Smith", "Bob Camper", "Combined Leaderboard") render cleanly in a single stacked column (down to 320px width).
+     - The participant portal buttons ("Harvy", "Charlotte", "Ash", "Tina", "Combined Leaderboard") render cleanly in a single stacked column (down to 320px width).
      - No telemetry charts (Chart.js) or dashboard widget tiles are visible on the page.
 
 ---
 
 ### Validation Scenario 2: Dynamic Transition to Dashboard
 - **Steps**:
-  1. From the landing page, click the button labeled **"Alice Smith"**.
+  1. From the landing page, click the button labeled **"Charlotte"**.
   2. Verify that:
-     - The browser's URL instantly updates to [http://localhost:8080/index.html?u=ali](http://localhost:8080/index.html?u=ali) without triggering a full page refresh.
+     - The browser's URL instantly updates to [http://localhost:8080/index.html?u=cha](http://localhost:8080/index.html?u=cha) without triggering a full page refresh.
      - The static project introduction card hides immediately (FR-003 / FR-005).
-     - The main telemetry dashboard container becomes visible, showing "Alice Smith's Dashboard".
-     - Active chart canvases (temperature, noise) and numeric counters fetch and load Alice's live values.
+     - The main telemetry dashboard container becomes visible, showing "Charlotte's Dashboard".
+     - Active chart canvases (temperature, noise) and numeric counters fetch and load Charlotte's live values.
 
 ---
 
 ### Validation Scenario 3: Direct Dashboard Bypass URL
 - **Steps**:
   1. Open a new, blank browser tab.
-  2. Directly load: [http://localhost:8080/index.html?u=bob](http://localhost:8080/index.html?u=bob).
+  2. Directly load: [http://localhost:8080/index.html?u=ash](http://localhost:8080/index.html?u=ash).
   3. Verify that:
      - The welcoming introductory landing page card is **completely bypassed and invisible** from the very first frame.
-     - The interface immediately renders Bob Camper's stats dashboard and initiates telemetry sync fetches.
+     - The interface immediately renders Ash's stats dashboard and initiates telemetry sync fetches.
 
 ---
 
@@ -62,12 +62,12 @@ Ensure you have Python 3.12+ installed.
 - **Steps**:
   1. Load [http://localhost:8080/index.html](http://localhost:8080/index.html).
   2. Verify that the `#intro-landing-view` container is **fully visible**.
-  3. Click the button labeled **"Alice Smith"**. Verify `#dashboard-view` displays Alice's stats, and the URL is `?u=ali`.
+  3. Click the button labeled **"Charlotte"**. Verify `#dashboard-view` displays Charlotte's stats, and the URL is `?u=cha`.
   4. Click the browser's **Back** button.
   5. Verify that:
      - The URL changes back to [http://localhost:8080/index.html](http://localhost:8080/index.html).
      - `#dashboard-view` is hidden.
      - `#intro-landing-view` is displayed immediately without a full page reload.
   6. Click the browser's **Forward** button.
-  7. Verify that `#intro-landing-view` is hidden, and `#dashboard-view` is shown with Alice's stats.
+  7. Verify that `#intro-landing-view` is hidden, and `#dashboard-view` is shown with Charlotte's stats.
 

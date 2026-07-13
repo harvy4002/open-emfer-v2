@@ -20,9 +20,10 @@ let consecutiveFailures = 0;
 
 // Hardcoded user profiles names mapping (Assumption 4)
 const USER_NAMES = {
-  hvy: "Harvy Atwal",
-  ali: "Alice Smith",
-  bob: "Bob Camper",
+  hvy: "Harvy",
+  cha: "Charlotte",
+  ash: "Ash",
+  tin: "Tina",
   combined: "Combined Camper Stats"
 };
 

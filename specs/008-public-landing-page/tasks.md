@@ -59,9 +59,9 @@
 
 **Goal**: Instant rendering of individual camper dashboards when loaded with URL query parameters.
 
-**Independent Test**: Navigate to `index.html?u=ali`. Verify introduction card is hidden and Alice's dynamic widgets load.
+**Independent Test**: Navigate to `index.html?u=cha`. Verify introduction card is hidden and Charlotte's dynamic widgets load.
 
-- [X] T008 [P] [US2] Define a hardcoded participant registry map (`hvy`, `ali`, `bob`, `combined` with names) in `web/js/app.js` to avoid external API calls (AWS Free Tier optimized).
+- [X] T008 [P] [US2] Define a hardcoded participant registry map (`hvy`, `cha`, `ash`, `tin`, `combined` with names) in `web/js/app.js` to avoid external API calls (AWS Free Tier optimized).
 - [X] T009 [US2] Update page-load initialization in `web/js/app.js` to ignore `localStorage` cached user state on initial direct load if no URL parameters are present, prioritizing the introductory landing page.
 - [X] T010 [US2] Update URL routing logic in `web/js/app.js` to immediately show `#dashboard-view`, hide `#intro-landing-view`, and load telemetry if a valid camper ID parameter is present.
 - [X] T011 [US2] Implement fallback behavior in `web/js/app.js` to fallback gracefully to showing `#intro-landing-view` if an invalid or unrecognized camper ID parameter (e.g. `?u=xyz`) is supplied.
@@ -72,11 +72,11 @@
 
 ## Phase 5: User Story 3 - Interactive Camper Portal Directory (Priority: P2)
 
-**Goal**: Tactile quick links for Harvy, Alice, Bob, and Combined dashboards that update state via `pushState` history and handle browser Back/Forward navigation (`popstate`).
+**Goal**: Tactile quick links for Harvy, Charlotte, Ash, and Tina dashboards that update state via `pushState` history and handle browser Back/Forward navigation (`popstate`).
 
-**Independent Test**: Click "Alice Smith" portal button, verify URL updates to `?u=ali` and dashboard transitions dynamically. Click back, verify it transitions back to landing page introduction.
+**Independent Test**: Click "Charlotte" portal button, verify URL updates to `?u=cha` and dashboard transitions dynamically. Click back, verify it transitions back to landing page introduction.
 
-- [X] T012 [P] [US3] Create dedicated, mobile-optimized navigation buttons for Harvy, Alice, Bob, and Combined dashboards within `#intro-landing-view` in `web/index.html`.
+- [X] T012 [P] [US3] Create dedicated, mobile-optimized navigation buttons for Harvy, Charlotte, Ash, Tina, and Combined dashboards within `#intro-landing-view` in `web/index.html`.
 - [X] T013 [P] [US3] Implement dynamic page transition function `selectCamperDashboard` inside `web/js/app.js` utilizing `window.history.pushState` to transition views without full page reloads.
 - [X] T014 [US3] Register click event handler listeners on all quick link portal buttons in `web/js/app.js` to call the routing transition helper function.
 - [X] T015 [US3] Register browser `popstate` event listener on `window` in `web/js/app.js` to dynamically handle history back/forward navigation, toggling view visibility states based on history parameters.
