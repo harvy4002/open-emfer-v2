@@ -83,13 +83,6 @@ resource "aws_lambda_function" "api_lambda" {
   timeout          = 15
   memory_size      = 256
 
-  environment {
-    variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.table.name
-      SECRETS_NAME        = aws_secretsmanager_secret.secrets.name
-    }
-  }
-
   tags = {
     Environment = "production"
     Project     = "open-emfer-v2"
