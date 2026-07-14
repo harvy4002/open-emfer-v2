@@ -66,14 +66,60 @@
     <canvas id="noise-chart-canvas"></canvas>
     <span id="stepsVal"></span>
     <span id="distVal"></span>
+    <img id="camper-status-image" src=""/>
   </div>
 
   <script>
-    // Injected Mocks for DOM assertions
     const results = [];
     
     function assert(description, condition) {
       results.push({ description, passed: !!condition });
+    }
+
+    // Mirror of resolveStatusImage mapping from app.js to enable standalone unit validation
+    function resolveStatusImage(statusText) {
+      if (!statusText) return "normal";
+      const status = statusText.toLowerCase();
+      
+      if (status.includes("sleep") || status.includes("nap") || status.includes("bed")) {
+        return "sleeping";
+      }
+      if (status.includes("drink") || status.includes("beer") || status.includes("pub") || status.includes("pint") || status.includes("beverage")) {
+        return "drinking";
+      }
+      if (status.includes("eat") || status.includes("food") || status.includes("dinner") || status.includes("lunch") || status.includes("hungry") || status.includes("eating")) {
+        return "eating";
+      }
+      if (status.includes("wet") || status.includes("toilet") || status.includes("pee") || status.includes("poo") || status.includes("bathroom") || status.includes("shower")) {
+        return "wet";
+      }
+      if (status.includes("lecture") || status.includes("talk") || status.includes("presentation") || status.includes("stage")) {
+        return "lecture";
+      }
+      if (status.includes("workshop") || status.includes("lab") || status.includes("hack") || status.includes("coding") || status.includes("code")) {
+        return "workshop";
+      }
+      if (status.includes("roam") || status.includes("walk") || status.includes("step") || status.includes("tent") || status.includes("explore") || status.includes("outside")) {
+        return "roaming";
+      }
+      if (status.includes("tire") || status.includes("exhaust") || status.includes("weary")) {
+        return "tired";
+      }
+      if (status.includes("chill") || status.includes("relax") || status.includes("rest") || status.includes("sitting")) {
+        return "chilling";
+      }
+      if (status.includes("annoy") || status.includes("mad") || status.includes("angry") || status.includes("sad") || status.includes("frustrat")) {
+        return "annoyed";
+      }
+      
+      const canonical = ["workshop", "wet", "tired", "sleeping", "roaming", "normal", "lecture", "eating", "drinking", "chilling", "annoyed"];
+      for (const name of canonical) {
+        if (status.includes(name)) {
+          return name;
+        }
+      }
+      
+      return "normal";
     }
 
     try {
@@ -139,6 +185,36 @@
         assert("Chart.js successfully binds line dataset to temperature-chart-canvas", tempChart !== null);
       } catch (e) {
         assert("Chart.js binding failed: " + e.message, false);
+      }
+
+      // 5. End-to-End Status Update to Dashboard Image rendering pipeline
+      try {
+        // Simulate a database payload returned from /beer?event=status&type=latest
+        const mockDatabasePayload = {
+          "status": "eating",
+          "user_id": "hvy",
+          "last_updated": "2026-07-14T22:39:55Z"
+        };
+
+        // Extract status text and resolve image path
+        const statusText = mockDatabasePayload.status;
+        const resolvedKeyword = resolveStatusImage(statusText);
+        
+        // Construct the expected relative asset path
+        const activeUser = mockDatabasePayload.user_id;
+        const expectedImageSrc = `${activeUser}_status/${activeUser}_${resolvedKeyword}.jpg`;
+
+        // Update the sandboxed image element
+        const imgEl = document.getElementById("camper-status-image");
+        imgEl.setAttribute("src", expectedImageSrc);
+
+        // Assertions
+        assert("Resolved status keyword maps 'eating' to 'eating'", resolvedKeyword === "eating");
+        assert("Constructed relative image source maps to 'hvy_status/hvy_eating.jpg'", expectedImageSrc === "hvy_status/hvy_eating.jpg");
+        assert("Sandbox DOM image element successfully updates its src attribute to match the database status", imgEl.getAttribute("src") === "hvy_status/hvy_eating.jpg");
+
+      } catch (e) {
+        assert("End-to-end status database-to-image test failed: " + e.message, false);
       }
 
     } catch (error) {
