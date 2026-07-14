@@ -10,8 +10,19 @@ import os
 import json
 import urllib.parse
 import decimal
+import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
+
+def make_event_sort_key(timestamp=None):
+    """Generates a lexicographically sortable event sort key: event#<iso8601>#<short_uuid_hash>."""
+    if not timestamp:
+        timestamp = datetime.now().isoformat()
+    # Clean timestamp format to ensure perfect sorting and compatibility
+    if not timestamp.endswith("Z") and "+" not in timestamp:
+        timestamp += "Z"
+    short_uuid = str(uuid.uuid4())[:8]
+    return f"event#{timestamp}#{short_uuid}"
 
 # Custom Decimal Encoder to ensure DynamoDB types are JSON-serializable (Constitution Principle VI/VIII compliance)
 class DecimalEncoder(json.JSONEncoder):
@@ -148,6 +159,92 @@ def db_put_item(event, type_val, attributes):
         save_local_db(db)
         return True
 
+def append_telemetry_event(user_id, event_type, payload):
+    """Appends an immutable telemetry event log record to the database (FR-001/FR-002/FR-003)."""
+    event_id = str(uuid.uuid4())
+    timestamp = datetime.now().isoformat()
+    if not timestamp.endswith("Z") and "+" not in timestamp:
+        timestamp += "Z"
+    
+    event_key = f"camper#events#{user_id}"
+    sort_key = make_event_sort_key(timestamp)
+    
+    event_payload = {
+        "event_id": event_id,
+        "user_id": user_id,
+        "event_type": event_type,
+        "payload": payload,
+        "timestamp": timestamp
+    }
+    return db_put_item(event_key, sort_key, event_payload)
+
+def db_query_events(user_id, until_timestamp):
+    """Retrieves all TelemetryEvent logs for a user up to a given ISO 8601 UTC timestamp."""
+    event_key = f"camper#events#{user_id}"
+    events = []
+    
+    if IS_AWS:
+        # Live AWS DynamoDB query using boto3 Query with KeyConditionExpression (Principles II/IV)
+        tbl = get_db_table()
+        if tbl is not None:
+            try:
+                from boto3.dynamodb.conditions import Key
+                upper_bound_sk = f"event#{until_timestamp}"
+                res = tbl.query(
+                    KeyConditionExpression=Key("event").eq(event_key) & Key("type").le(upper_bound_sk)
+                )
+                items = res.get("Items", [])
+                items = sorted(items, key=lambda x: x.get("type", ""))
+                return items
+            except Exception as e:
+                print(f"DynamoDB Query Error: {e}")
+                return []
+    else:
+        # Local JSON database emulation
+        db = load_local_db()
+        user_events_map = db.get(event_key, {})
+        upper_bound_sk = f"event#{until_timestamp}"
+        for sk, item in user_events_map.items():
+            if sk <= upper_bound_sk:
+                events.append(item)
+        events = sorted(events, key=lambda x: x.get("type", ""))
+        return events
+
+def process_playback(user_id, until_timestamp):
+    """Reconstructs and returns the aggregate state of a camper by replaying chronological event logs (FR-005/FR-006)."""
+    events = db_query_events(user_id, until_timestamp)
+    
+    # Initialize blank aggregate snapshot structure
+    totals = {
+        "user_id": user_id,
+        "total_drinks": 0,
+        "beer_drinks": 0,
+        "categories": {}
+    }
+    
+    for event in events:
+        event_type = event.get("event_type")
+        payload = event.get("payload") or {}
+        name = payload.get("type")
+        is_beer = payload.get("beer") == "true" or payload.get("beer") is True
+        reverse = payload.get("reverse") is True or payload.get("reverse") == "true"
+        
+        val_offset = -1 if reverse else 1
+        
+        if event_type == "Drinks":
+            totals["categories"][name] = max(0, int(totals["categories"].get(name, 0)) + val_offset)
+            totals["total_drinks"] = max(0, int(totals["total_drinks"]) + val_offset)
+            if is_beer:
+                totals["beer_drinks"] = max(0, int(totals["beer_drinks"]) + val_offset)
+        elif event_type in ["Toilet", "Lecture", "Workshop", "Gaming", "Tent", "NewPeople", "Martini"]:
+            totals["categories"][name] = max(0, int(totals["categories"].get(name, 0)) + val_offset)
+        elif event_type == "Reset" and name == "ResetDay":
+            totals["categories"] = {}
+            totals["total_drinks"] = 0
+            totals["beer_drinks"] = 0
+            
+    return totals, len(events)
+
 # --- Unified REST Core Routing Logic ---
 
 def process_api_get(path, query_params):
@@ -242,6 +339,19 @@ def process_api_get(path, query_params):
             "transactions": monzo_state.get("transactions", [])
         }, indent=2)
         
+    elif path == "/playback":
+        user_id = query_params.get("user_id", "hvy")
+        until = query_params.get("until") or datetime.now().isoformat()
+        
+        reconstructed, processed_count = process_playback(user_id, until)
+        
+        return 200, headers, json_dumps({
+            "status": "success",
+            "reconstructed_state": reconstructed,
+            "events_processed": processed_count,
+            "playback_boundary": until
+        }, indent=2)
+        
     return 404, headers, "Not Found"
 
 def process_api_post(path, payload, auth_header):
@@ -265,6 +375,9 @@ def process_api_post(path, payload, auth_header):
         name = payload.get("type")
         is_beer = payload.get("beer") == "true" or payload.get("beer") is True
         reverse = payload.get("reverse") is True or payload.get("reverse") == "true"
+        
+        # Append immutable event to event store (FR-001/FR-002)
+        append_telemetry_event(user_id, event_type, payload)
         
         # 1. Update User aggregate
         user_key = f"camper#aggregates#{user_id}"
@@ -339,6 +452,10 @@ def process_api_post(path, payload, auth_header):
         
     elif path == "/sensecap":
         user_id = payload.get("user_id") or "hvy"
+        
+        # Append immutable event to event store (FR-001/FR-002)
+        append_telemetry_event(user_id, "sensecap", payload)
+        
         lat = payload.get("latitude")
         lng = payload.get("longitude")
         temp = payload.get("temperature")
@@ -404,6 +521,10 @@ def process_api_post(path, payload, auth_header):
         
     elif path == "/browan":
         user_id = payload.get("user_id") or "hvy"
+        
+        # Append immutable event to event store (FR-001/FR-002)
+        append_telemetry_event(user_id, "browan", payload)
+        
         sound = payload.get("sound_level") or 45.0
         
         combined_totals = db_get_item("camper#aggregates#combined", "totals") or {
@@ -421,6 +542,11 @@ def process_api_post(path, payload, auth_header):
         })
         
     elif path == "/monzo-sync-simulation":
+        user_id = payload.get("user_id") or "hvy"
+        
+        # Append immutable event to event store (FR-001/FR-002)
+        append_telemetry_event(user_id, "monzo", payload)
+        
         amount = float(payload.get("amount") or -5.00)
         desc = payload.get("merchant") or "Simulated Expense"
         timestamp = datetime.now().isoformat() + "Z"
@@ -460,6 +586,9 @@ def process_api_post(path, payload, auth_header):
         user_id = payload.get("user_id") or "hvy"
         steps = int(payload.get("steps") or 0)
         timestamp = datetime.now().isoformat() + "Z"
+
+        # Append immutable event to event store (FR-001/FR-002)
+        append_telemetry_event(user_id, "steps", payload)
 
         dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
         device_state = db_get_item(dev_key, "state") or {

@@ -10,6 +10,7 @@ import sys
 import json
 import urllib.request
 import urllib.error
+from datetime import datetime
 
 # Config target API Base URL (Default to live AWS API Gateway Production stage)
 LIVE_API_BASE = "https://01uy6frz0h.execute-api.eu-west-2.amazonaws.com/prod"
@@ -127,6 +128,31 @@ def test_camper_endpoints(base_url, camper_id):
         except Exception as e:
             print(f"{RED}[FAIL]{RESET} -> JSON Parse/Validation: {e}")
             errors.append(f"/monzo JSON: {e} (Response: {body})")
+
+    # 4. Test /playback endpoint (T009)
+    playback_url = f"{base_url}/playback?user_id={camper_id}&until={datetime.now().isoformat()}Z"
+    print(f"GET {playback_url} ... ", end="")
+    status, body, err = make_request(playback_url)
+    
+    if err:
+        print(f"{RED}[FAIL]{RESET} -> {err}")
+        errors.append(f"/playback: {err} (Response: {body})")
+    elif status != 200:
+        print(f"{RED}[FAIL]{RESET} -> HTTP {status}")
+        errors.append(f"/playback: HTTP {status} (Response: {body})")
+    else:
+        try:
+            data = json.loads(body)
+            # Verify required properties
+            if data.get("status") != "success":
+                raise KeyError(f"'status' is {data.get('status')} instead of 'success'")
+            if "reconstructed_state" not in data or "events_processed" not in data:
+                raise KeyError("missing 'reconstructed_state' or 'events_processed'")
+                
+            print(f"{GREEN}[PASS]{RESET} (replayed_events: {data.get('events_processed')})")
+        except Exception as e:
+            print(f"{RED}[FAIL]{RESET} -> JSON Parse/Validation: {e}")
+            errors.append(f"/playback JSON: {e} (Response: {body})")
 
     return errors
 
