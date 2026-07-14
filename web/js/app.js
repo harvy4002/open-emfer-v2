@@ -66,6 +66,8 @@ function initUI() {
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
     document.getElementById("leaderboard-panel").classList.add("hidden");
   }
+  
+  syncNavUI();
 }
 
 function initCharts() {
@@ -331,6 +333,56 @@ function selectCamperDashboard(camperId) {
   initUI();
   fetchTelemetry();
   scheduleRefresh();
+}
+
+// Interactive Quick Navigation Switcher (FR-001/FR-002/FR-003/FR-004)
+function switchDashboard(camperId) {
+  let newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  if (camperId) {
+    newUrl += "?u=" + camperId;
+    hasUserParam = true;
+    activeUser = camperId;
+  } else {
+    hasUserParam = false;
+    activeUser = "";
+  }
+  
+  window.history.pushState({ path: newUrl }, '', newUrl);
+  
+  // Update view and highlight state
+  syncNavUI();
+  initUI();
+  
+  if (hasUserParam) {
+    fetchTelemetry();
+    scheduleRefresh();
+  } else {
+    clearTimeout(refreshTimeout);
+  }
+}
+
+// Update Active/Inactive Highlights for Navigation Elements (FR-002/FR-006)
+function syncNavUI() {
+  if (!hasUserParam) return;
+  
+  const campers = ["hvy", "cha", "ash", "tin", "combined"];
+  campers.forEach(id => {
+    const btn = document.getElementById(`nav-btn-${id}`);
+    if (btn) {
+      if (id === activeUser) {
+        btn.classList.remove("is-dark");
+        btn.classList.add("is-link");
+      } else {
+        btn.classList.remove("is-link");
+        btn.classList.add("is-dark");
+      }
+    }
+  });
+  
+  const selectEl = document.getElementById("nav-mobile-select");
+  if (selectEl) {
+    selectEl.value = activeUser;
+  }
 }
 
 // Jittered Polling Execution with Page Visibility throttling

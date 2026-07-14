@@ -80,6 +80,10 @@
       height: 48px !important;
       font-weight: bold;
     }
+    .select.touch-btn, .select.touch-btn select {
+      height: 48px !important;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -121,6 +125,35 @@
   <!-- Real-time Telemetry Dashboard Widgets View (FR-003) -->
   <section class="section" id="dashboard-view">
     <div class="container">
+      <!-- Persistent Header Navigation Bar (FR-001/FR-002/FR-004/FR-006) -->
+      <div id="dashboard-navigation-bar" class="mb-4">
+        <!-- Desktop and Tablet view (Row of buttons) -->
+        <div class="buttons is-hidden-mobile" id="nav-buttons-row">
+          <button class="button is-dark touch-btn" onclick="switchDashboard('')">🏠 Portal Home</button>
+          <button class="button is-dark touch-btn" id="nav-btn-hvy" onclick="switchDashboard('hvy')">Harvy</button>
+          <button class="button is-dark touch-btn" id="nav-btn-cha" onclick="switchDashboard('cha')">Charlotte</button>
+          <button class="button is-dark touch-btn" id="nav-btn-ash" onclick="switchDashboard('ash')">Ash</button>
+          <button class="button is-dark touch-btn" id="nav-btn-tin" onclick="switchDashboard('tin')">Tina</button>
+          <button class="button is-dark touch-btn" id="nav-btn-combined" onclick="switchDashboard('combined')">Combined Stats</button>
+        </div>
+        
+        <!-- Mobile view (Collapsed responsive select dropdown with 48px height) -->
+        <div class="field is-hidden-tablet">
+          <div class="control">
+            <div class="select is-fullwidth touch-btn">
+              <select id="nav-mobile-select" onchange="switchDashboard(this.value)">
+                <option value="">🏠 Portal Home</option>
+                <option value="hvy">Harvy</option>
+                <option value="cha">Charlotte</option>
+                <option value="ash">Ash</option>
+                <option value="tin">Tina</option>
+                <option value="combined">Combined Stats</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="level mb-4">
         <div class="level-left">
           <div>
