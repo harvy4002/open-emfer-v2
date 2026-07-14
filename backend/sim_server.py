@@ -260,26 +260,12 @@ def process_api_get(path, query_params):
             events = db_query_events(user_id, datetime.now().isoformat() + "Z")
             status_text = "normal"
             if events:
-                latest_event = events[-1]
-                event_type = latest_event.get("event_type")
-                payload = latest_event.get("payload") or {}
-                
-                if event_type.lower() == "status":
+                # Filter strictly for explicit "Status" / "status" events (T007/FR-002 alignment)
+                status_events = [e for e in events if e.get("event_type", "").lower() == "status"]
+                if status_events:
+                    latest_status_event = status_events[-1]
+                    payload = latest_status_event.get("payload") or {}
                     status_text = payload.get("status") or payload.get("type") or "normal"
-                elif event_type == "Drinks":
-                    status_text = "drinking"
-                elif event_type == "Toilet":
-                    status_text = "wet"
-                elif event_type == "Lecture":
-                    status_text = "lecture"
-                elif event_type == "Workshop":
-                    status_text = "workshop"
-                elif event_type == "Tent":
-                    status_text = "roaming"
-                elif event_type == "steps":
-                    status_text = "roaming"
-                else:
-                    status_text = "normal"
             
             # Normalize to lowercase to match the .jpg files in the folder (FR-003)
             status_text = status_text.lower()
