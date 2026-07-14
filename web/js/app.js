@@ -381,7 +381,7 @@ document.addEventListener("visibilitychange", () => {
         imgEl.onerror = function() {
           if (this.src.indexOf('_normal.jpg') !== -1) {
             this.onerror = null;
-            this.src = '/harvy_status/harvy_normal.jpg';
+            this.src = '/hvy_status/hvy_normal.jpg';
           } else {
             this.src = '/' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg';
           }
