@@ -87,3 +87,37 @@ function injectMonzo() {
 
   sendSimRequest("/monzo-sync-simulation", payload);
 }
+
+async function inject3HourTrail() {
+  const user = document.getElementById("simUser").value || "ali";
+  
+  // Define a preset of 4 sequential coordinate points winding around Eastnor Castle (campsite area)
+  // Point 1: 4 hours ago (should be filtered out of the 3h map view)
+  // Point 2: 2.5 hours ago (should render on map)
+  // Point 3: 1 hour ago (should render on map)
+  // Point 4: Now (should render as distinguished active head)
+  const route = [
+    { offsetMins: 240, lat: 52.0401, lng: -2.3760, temp: 21.0, light: 100 },
+    { offsetMins: 150, lat: 52.0411, lng: -2.3780, temp: 22.0, light: 150 },
+    { offsetMins: 60,  lat: 52.0418, lng: -2.3790, temp: 23.0, light: 180 },
+    { offsetMins: 0,   lat: 52.0425, lng: -2.3800, temp: 22.5, light: 200 }
+  ];
+
+  const nowMs = Date.now();
+
+  for (const pt of route) {
+    const timestamp = new Date(nowMs - pt.offsetMins * 60 * 1000).toISOString();
+    const payload = {
+      user_id: user,
+      device_id: "eui-70b3d57ed0051111",
+      timestamp: timestamp,
+      latitude: pt.lat,
+      longitude: pt.lng,
+      temperature: pt.temp,
+      light: pt.light
+    };
+    
+    // Use sequential await to preserve order in local DB storage
+    await sendSimRequest("/sensecap", payload);
+  }
+}

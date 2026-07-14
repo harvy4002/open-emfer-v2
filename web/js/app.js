@@ -18,6 +18,8 @@ let tempChart = null;
 let noiseChart = null;
 let refreshTimeout = null;
 let consecutiveFailures = 0;
+let mapInstance = null;
+let mapLayersGroup = null;
 
 // Hardcoded user profiles names mapping (Assumption 4)
 const USER_NAMES = {
@@ -247,80 +249,146 @@ function updateLeaderboard(leaderboard) {
   });
 }
 
+function initializeMap() {
+  const container = document.getElementById("map-container");
+  if (!container || mapInstance) return;
+
+  mapInstance = L.map('map-container', {
+    center: [52.0411, -2.3784],
+    zoom: 16,
+    zoomControl: true
+  });
+
+  const emfTiles = L.tileLayer('https://map.emfcamp.org/tiles/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.emfcamp.org">EMF Camp</a>'
+  });
+
+  emfTiles.addTo(mapInstance);
+
+  // Fallback to OSM tiles on load failure
+  emfTiles.on('tileerror', function() {
+    console.warn("EMF Camp tile server failed to load tile. Falling back to OpenStreetMap.");
+    emfTiles.remove();
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(mapInstance);
+  });
+
+  mapLayersGroup = L.layerGroup().addTo(mapInstance);
+}
+
 // Draw dynamic coordinates path overlays onto static map background (FR-012)
 function drawLocationTrail(locationHistory) {
-  const canvas = document.getElementById("map-trail-canvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
+  // Ensure map is initialized first
+  initializeMap();
+  if (!mapInstance || !mapLayersGroup) return;
 
-  ctx.clearRect(0, 0, rect.width, rect.height);
+  // Clear previous plotted trail
+  mapLayersGroup.clearLayers();
 
   if (!locationHistory || locationHistory.length === 0) return;
 
-  const points = locationHistory.slice(-6);
+  // Find the latest coordinate point (chronologically latest)
+  let latestPoint = null;
+  let maxTimeMs = -Infinity;
 
-  let minLat = Infinity, maxLat = -Infinity;
-  let minLng = Infinity, maxLng = -Infinity;
-
-  points.forEach(pt => {
-    if (pt.lat < minLat) minLat = pt.lat;
-    if (pt.lat > maxLat) maxLat = pt.lat;
-    if (pt.lng < minLng) minLng = pt.lng;
-    if (pt.lng > maxLng) maxLng = pt.lng;
-  });
-
-  const latRange = (maxLat - minLat) || 1;
-  const lngRange = (maxLng - minLng) || 1;
-
-  // Plot path lines
-  ctx.beginPath();
-  ctx.strokeStyle = "#ff780a";
-  ctx.lineWidth = 4;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  points.forEach((pt, idx) => {
-    const x = 50 + ((pt.lng - minLng) / lngRange) * (rect.width - 100);
-    const y = 50 + (1 - (pt.lat - minLat) / latRange) * (rect.height - 100);
-
-    if (idx === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
+  locationHistory.forEach(pt => {
+    const timeMs = pt.time ? Date.parse(pt.time) : 0;
+    if (timeMs > maxTimeMs) {
+      maxTimeMs = timeMs;
+      latestPoint = pt;
     }
   });
-  ctx.stroke();
 
-  // Plot markers
-  points.forEach((pt, idx) => {
-    const x = 50 + ((pt.lng - minLng) / lngRange) * (rect.width - 100);
-    const y = 50 + (1 - (pt.lat - minLat) / latRange) * (rect.height - 100);
+  if (!latestPoint) return;
 
-    ctx.beginPath();
-    if (idx === points.length - 1) {
-      // Current active coordinate head
-      ctx.fillStyle = "#e02f44";
-      ctx.arc(x, y, 8, 0, 2 * Math.PI);
-      ctx.fill();
+  // 3-hour delta filter relative to the latest point's timestamp
+  const threeHoursInMs = 3 * 60 * 60 * 1000;
+  const thresholdTime = maxTimeMs - threeHoursInMs;
+
+  const filteredPoints = locationHistory.filter(pt => {
+    const timeMs = pt.time ? Date.parse(pt.time) : 0;
+    return timeMs >= thresholdTime;
+  });
+
+  if (filteredPoints.length === 0) return;
+
+  // Map to Leaflet latlng format [lat, lng]
+  const latlngs = filteredPoints.map(pt => [pt.lat, pt.lng]);
+
+  // Draw the polyline path
+  const polyline = L.polyline(latlngs, {
+    color: '#ff780a',
+    weight: 4,
+    opacity: 0.9,
+    lineJoin: 'round',
+    lineCap: 'round'
+  }).addTo(mapLayersGroup);
+
+  // Plot markers for each coordinate check
+  filteredPoints.forEach((pt, idx) => {
+    const isLatest = (pt === latestPoint);
+    const pointTime = pt.time ? new Date(pt.time) : null;
+    const timeString = pointTime ? pointTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "N/A";
+
+    let popupContent = `<strong>Time</strong>: ${timeString}`;
+    
+    let marker;
+    if (isLatest) {
+      // Active head marker: large red pulsing circle marker
+      marker = L.circleMarker([pt.lat, pt.lng], {
+        radius: 8,
+        fillColor: '#e02f44',
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 1
+      }).addTo(mapLayersGroup);
+
+      // Pulse aura ring
+      L.circleMarker([pt.lat, pt.lng], {
+        radius: 14,
+        fillColor: '#e02f44',
+        color: '#e02f44',
+        weight: 1,
+        opacity: 0.4,
+        fillOpacity: 0.15
+      }).addTo(mapLayersGroup);
+
+      // Append cumulative user stats if available
+      const stepsText = document.getElementById("stepsVal") ? document.getElementById("stepsVal").textContent : null;
+      const distText = document.getElementById("distVal") ? document.getElementById("distVal").textContent : null;
       
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(224, 47, 68, 0.4)";
-      ctx.lineWidth = 2;
-      ctx.arc(x, y, 12, 0, 2 * Math.PI);
-      ctx.stroke();
+      popupContent += `<br/><strong>Status</strong>: Latest Active Check-In`;
+      if (stepsText) popupContent += `<br/><strong>Cumulative Steps</strong>: ${stepsText}`;
+      if (distText) popupContent += `<br/><strong>Cumulative Distance</strong>: ${distText.replace("Distance: ", "")}`;
     } else {
-      // Trailing breadcrumbs
-      ctx.fillStyle = "#ff780a";
-      ctx.arc(x, y, 5, 0, 2 * Math.PI);
-      ctx.fill();
+      // Past trail breadcrumbs: small orange circle marker
+      marker = L.circleMarker([pt.lat, pt.lng], {
+        radius: 5,
+        fillColor: '#ff780a',
+        color: '#1f2226',
+        weight: 1,
+        fillOpacity: 0.9
+      }).addTo(mapLayersGroup);
     }
+
+    marker.bindPopup(popupContent);
   });
+
+  // Fit map bounds to frame the trail nicely
+  try {
+    mapInstance.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+  } catch (e) {
+    console.error("Leaflet fitBounds failed: ", e);
+    mapInstance.setView([latestPoint.lat, latestPoint.lng], 16);
+  }
+
+  // Force map invalidation to correct size issues after container transitions
+  setTimeout(() => {
+    mapInstance.invalidateSize();
+  }, 100);
 }
 
 // Interactive Portal Navigation transitions (FR-005)
