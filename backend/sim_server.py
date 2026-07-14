@@ -191,7 +191,7 @@ def db_query_events(user_id, until_timestamp):
                 from boto3.dynamodb.conditions import Key
                 upper_bound_sk = f"event#{until_timestamp}"
                 res = tbl.query(
-                    KeyConditionExpression=Key("event").eq(event_key) & Key("type").le(upper_bound_sk)
+                    KeyConditionExpression=Key("event").eq(event_key) & Key("type").lte(upper_bound_sk)
                 )
                 items = res.get("Items", [])
                 items = sorted(items, key=lambda x: x.get("type", ""))
