@@ -668,8 +668,15 @@ def lambda_handler(event, context):
                 "body": ""
             }
             
-        # Standardize Authorization check
-        auth_header = headers.get("authorization") or headers.get("tracker_key") or headers.get("tracker_key")
+        # Standardize case-insensitive Authorization check (Constitution Principle V / VIII)
+        auth_header = (
+            headers.get("authorization") or 
+            headers.get("Authorization") or 
+            headers.get("tracker_key") or 
+            headers.get("TRACKER_KEY") or 
+            headers.get("tracker-key") or 
+            headers.get("Tracker-Key")
+        )
         
         if http_method == "GET":
             status, res_headers, body = process_api_get(path, query_params_raw)
