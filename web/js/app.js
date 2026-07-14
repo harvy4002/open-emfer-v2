@@ -187,7 +187,10 @@ async function fetchTelemetry() {
     if (resStatus.ok) {
       const statusData = await resStatus.json();
       const statusText = statusData.status || "Chilling";
-      document.getElementById("camper-status-badge").textContent = statusText;
+      const badgeEl = document.getElementById("camper-status-badge");
+      if (badgeEl) {
+        badgeEl.textContent = statusText;
+      }
 
       // Resolve status photo file path dynamically based on 009-camper-profile-status specs (FR-001/FR-003/FR-006)
       const normalizedStatus = statusText.toLowerCase();
@@ -371,6 +374,24 @@ document.addEventListener("visibilitychange", () => {
   } else {
     if (hasUserParam) {
       console.log("Tab active: resuming auto-refresh polling loop.");
+      
+      // Fix background suspended image load failures by re-enabling onerror and forcing reload
+      const imgEl = document.getElementById("camper-status-image");
+      if (imgEl) {
+        imgEl.onerror = function() {
+          if (this.src.indexOf('_normal.jpg') !== -1) {
+            this.onerror = null;
+            this.src = '/harvy_status/harvy_normal.jpg';
+          } else {
+            this.src = '/' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg';
+          }
+        };
+        const currentSrc = imgEl.getAttribute("src");
+        if (currentSrc) {
+          imgEl.setAttribute("src", currentSrc);
+        }
+      }
+      
       fetchTelemetry();
       scheduleRefresh();
     }
