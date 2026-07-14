@@ -253,6 +253,43 @@ def process_api_get(path, query_params):
     
     if path == "/beer":
         user_id = query_params.get("user_id", "hvy")
+        
+        # Check if the query is requesting the latest status of the user (009/010 event-sourced status support)
+        if query_params.get("event") == "status" and query_params.get("type") == "latest":
+            # Query the latest event for this user
+            events = db_query_events(user_id, datetime.now().isoformat() + "Z")
+            status_text = "normal"
+            if events:
+                latest_event = events[-1]
+                event_type = latest_event.get("event_type")
+                payload = latest_event.get("payload") or {}
+                
+                if event_type == "status":
+                    status_text = payload.get("status") or payload.get("type") or "normal"
+                elif event_type == "Drinks":
+                    status_text = "drinking"
+                elif event_type == "Toilet":
+                    status_text = "wet"
+                elif event_type == "Lecture":
+                    status_text = "lecture"
+                elif event_type == "Workshop":
+                    status_text = "workshop"
+                elif event_type == "Tent":
+                    status_text = "roaming"
+                elif event_type == "steps":
+                    status_text = "roaming"
+                else:
+                    status_text = "normal"
+            
+            # Normalize to lowercase to match the .jpg files in the folder (FR-003)
+            status_text = status_text.lower()
+            
+            return 200, headers, json_dumps({
+                "status": status_text,
+                "user_id": user_id,
+                "last_updated": datetime.now().isoformat() + "Z"
+            }, indent=2)
+
         agg_key = f"camper#aggregates#{user_id}"
         
         # Load aggregates from database
