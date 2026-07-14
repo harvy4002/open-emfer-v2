@@ -1,0 +1,98 @@
+# backend/tests/unit/test_math_helpers.py
+import os
+import json
+import pytest
+import backend.sim_server as sim_server
+
+@pytest.fixture(autouse=True)
+def mock_temp_db(tmp_path):
+    """Fixture to isolate the local database file during test runs."""
+    test_db_file = os.path.join(tmp_path, "test_local_db.json")
+    original_db_file = sim_server.DB_FILE
+    sim_server.DB_FILE = test_db_file
+    
+    # Initialize with default structure
+    with open(test_db_file, "w") as fh:
+        json.dump(sim_server.DEFAULT_DB, fh, indent=2)
+        
+    yield test_db_file
+    
+    # Restore original path
+    sim_server.DB_FILE = original_db_file
+    if os.path.exists(test_db_file):
+        try:
+            os.remove(test_db_file)
+        except OSError:
+            pass
+
+def test_distance_and_steps_calculations():
+    """Verify that posting consecutive coordinates calculates distance increments correctly."""
+    user_id = "hvy"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. First payload (baseline coordinates)
+    payload_1 = {
+        "user_id": user_id,
+        "device_id": "eui-70b3d57ed0051111",
+        "timestamp": "2026-07-14T12:00:00Z",
+        "latitude": 52.0411,
+        "longitude": -2.3784,
+        "temperature": 22.0,
+        "light": 150
+    }
+    status, _, _ = sim_server.process_api_post("/sensecap", payload_1, auth_key)
+    assert status == 201
+    
+    # Since first coordinate is different from default London center, it starts at 0.05
+    status_get, _, body = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["cumulative_distance_km"] == 0.05
+    assert data["cumulative_steps"] == int(0.05 / 0.00063)
+    assert len(data["location_history"]) == 1
+    
+    # 2. Second payload with modified coordinates (should increment distance to 0.10km)
+    payload_2 = {
+        "user_id": user_id,
+        "device_id": "eui-70b3d57ed0051111",
+        "timestamp": "2026-07-14T12:30:00Z",
+        "latitude": 52.0418,  # Changed
+        "longitude": -2.3790,  # Changed
+        "temperature": 22.5,
+        "light": 160
+    }
+    status_post_2, _, _ = sim_server.process_api_post("/sensecap", payload_2, auth_key)
+    assert status_post_2 == 201
+    
+    # Verify values are correctly incremented
+    status_get_2, _, body_2 = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status_get_2 == 200
+    data_2 = json.loads(body_2)
+    assert data_2["cumulative_distance_km"] == 0.10
+    assert data_2["cumulative_steps"] == int(0.10 / 0.00063)
+    assert len(data_2["location_history"]) == 2
+
+def test_location_history_bounds_cap():
+    """Verify that coordinates history array maintains a strict max limit of 20 elements."""
+    user_id = "hvy"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # Post 22 coordinates
+    for i in range(22):
+        payload = {
+            "user_id": user_id,
+            "device_id": "eui-70b3d57ed0051111",
+            "timestamp": f"2026-07-14T13:{i:02d}:00Z",
+            "latitude": 52.0411 + (i * 0.0001),
+            "longitude": -2.3784 + (i * 0.0001),
+            "temperature": 22.0,
+            "light": 150
+        }
+        status, _, _ = sim_server.process_api_post("/sensecap", payload, auth_key)
+        assert status == 201
+        
+    # Get history and check length
+    status_get, _, body = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert len(data["location_history"]) == 20

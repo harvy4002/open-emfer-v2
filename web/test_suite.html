@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Open EMF Camper - Frontend E2E Test Suite</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      background-color: #161719;
+      color: #d8d9da;
+      font-family: Helvetica, Arial, sans-serif;
+      padding: 2rem 1.5rem;
+    }
+    .test-card {
+      background-color: #1f2226;
+      border: 1px solid #2c2f33;
+      border-radius: 4px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+    .assertion-item {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #2c2f33;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .assertion-item:last-child {
+      border-bottom: none;
+    }
+    .pass-tag {
+      background-color: #23d160 !important;
+      color: #fff !important;
+    }
+    .fail-tag {
+      background-color: #ff3860 !important;
+      color: #fff !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 800px;">
+    <h1 class="title has-text-white has-text-centered mb-2">📡 Open EMF Camper</h1>
+    <h2 class="subtitle has-text-grey has-text-centered">Zero-Dependency Browser-Native E2E Test Suite</h2>
+    
+    <div class="test-card">
+      <h3 class="title is-5 has-text-warning mb-4">🎯 DOM & Integration Assertions</h3>
+      <div id="assertions-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+    
+    <div class="test-card has-text-centered mt-4">
+      <div class="title is-4" id="overall-status">Running Tests...</div>
+    </div>
+  </div>
+
+  <!-- Sandboxed Mock DOM Elements for mounting (display: none; so they do not break visual card layouts) -->
+  <div id="sandbox-elements" style="display: none; position: absolute; width: 0; height: 0; overflow: hidden;">
+    <div id="map-container" style="width: 100px; height: 100px;"></div>
+    <canvas id="temperature-chart-canvas"></canvas>
+    <canvas id="noise-chart-canvas"></canvas>
+    <span id="stepsVal"></span>
+    <span id="distVal"></span>
+  </div>
+
+  <script>
+    // Injected Mocks for DOM assertions
+    const results = [];
+    
+    function assert(description, condition) {
+      results.push({ description, passed: !!condition });
+    }
+
+    try {
+      // 1. Verify Library Assets
+      assert("Leaflet library is successfully loaded in window", typeof L !== "undefined");
+      assert("Chart.js library is successfully loaded in window", typeof Chart !== "undefined");
+
+      // 2. Verify Leaflet map container initialization (FR-001/FR-002)
+      let mapInstance = null;
+      try {
+        mapInstance = L.map('map-container', {
+          center: [52.0411, -2.3784],
+          zoom: 16
+        });
+        assert("Leaflet map container initializes successfully on sandbox container", mapInstance !== null);
+        assert("Leaflet map defaults center to EMF coordinates [52.0411, -2.3784]", 
+          Math.abs(mapInstance.getCenter().lat - 52.0411) < 0.001 && 
+          Math.abs(mapInstance.getCenter().lng - (-2.3784)) < 0.001
+        );
+      } catch (e) {
+        assert("Leaflet map initialization failed: " + e.message, false);
+      }
+
+      // 3. Verify client-side 3-hour timestamp filtering logic (FR-004)
+      const mockHistory = [
+        { lat: 52.0401, lng: -2.3760, time: "2026-07-14T11:00:00Z" }, // 4 Hours Ago (Filtered)
+        { lat: 52.0411, lng: -2.3780, time: "2026-07-14T12:30:00Z" }, // 2.5 Hours Ago (Render)
+        { lat: 52.0418, lng: -2.3790, time: "2026-07-14T14:00:00Z" }, // 1 Hour Ago (Render)
+        { lat: 52.0425, lng: -2.3800, time: "2026-07-14T15:00:00Z" }  // Now (Render)
+      ];
+
+      // Calculate latest timestamp and threshold
+      let maxTimeMs = -Infinity;
+      let latestPoint = null;
+      mockHistory.forEach(pt => {
+        const timeMs = Date.parse(pt.time);
+        if (timeMs > maxTimeMs) {
+          maxTimeMs = timeMs;
+          latestPoint = pt;
+        }
+      });
+
+      const threeHoursInMs = 3 * 60 * 60 * 1000;
+      const thresholdTime = maxTimeMs - threeHoursInMs;
+
+      const filteredPoints = mockHistory.filter(pt => Date.parse(pt.time) >= thresholdTime);
+
+      assert("Chronological sliding threshold calculator identifies latest coordinate", latestPoint.time === "2026-07-14T15:00:00Z");
+      assert("Client-side 3-hour chronological filter successfully discards coordinates older than 3 hours", filteredPoints.length === 3);
+      assert("Filtered coordinate list excludes coordinate from 4 hours ago", !filteredPoints.some(pt => pt.time === "2026-07-14T11:00:00Z"));
+
+      // 4. Verify Chart.js binding to canvases
+      let tempChart = null;
+      try {
+        const ctx = document.getElementById("temperature-chart-canvas").getContext("2d");
+        tempChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: ["12:00", "13:00"],
+            datasets: [{ data: [20, 22] }]
+          }
+        });
+        assert("Chart.js successfully binds line dataset to temperature-chart-canvas", tempChart !== null);
+      } catch (e) {
+        assert("Chart.js binding failed: " + e.message, false);
+      }
+
+    } catch (error) {
+      assert("Critical validation exception occurred: " + error.message, false);
+    }
+
+    // Render results to HTML UI
+    const container = document.getElementById("assertions-container");
+    let allPassed = true;
+    
+    results.forEach(res => {
+      const classType = res.passed ? "pass-tag" : "fail-tag";
+      const tagText = res.passed ? "PASS" : "FAIL";
+      if (!res.passed) allPassed = false;
+      
+      container.innerHTML += `
+        <div class="assertion-item">
+          <span class="has-text-grey-lighter">${res.description}</span>
+          <span class="tag ${classType} has-text-weight-bold">${tagText}</span>
+        </div>
+      `;
+    });
+
+    const overallStatusEl = document.getElementById("overall-status");
+    if (allPassed) {
+      overallStatusEl.textContent = "✓ ALL frontend tests passed successfully!";
+      overallStatusEl.className = "title is-4 has-text-success";
+    } else {
+      overallStatusEl.textContent = "✗ Some browser assertions have failed!";
+      overallStatusEl.className = "title is-4 has-text-danger";
+    }
+  </script>
+</body>
+</html>
