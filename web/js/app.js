@@ -11,6 +11,7 @@ const API_BASE = isLocal ? "http://localhost:3000" : "https://01uy6frz0h.execute
 const urlParams = new URLSearchParams(window.location.search);
 let hasUserParam = urlParams.has("u") || urlParams.has("user_id");
 let activeUser = urlParams.get("u") || urlParams.get("user_id") || "hvy";
+window.activeUser = activeUser;
 
 // Global UI / Chart State
 let tempChart = null;
@@ -194,9 +195,9 @@ async function fetchTelemetry() {
         badgeEl.textContent = statusText;
       }
 
-      // Resolve status photo file path dynamically based on 009-camper-profile-status specs (FR-001/FR-003/FR-006)
-      const normalizedStatus = statusText.toLowerCase();
-      const dynamicImage = `/${activeUser}_status/${activeUser}_${normalizedStatus}.jpg`;
+      // Resolve status photo file path dynamically using keyword matching (009/011 alignment)
+      const resolvedFileKeyword = resolveStatusImage(statusText);
+      const dynamicImage = `/${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
       document.getElementById("camper-status-image").setAttribute("src", dynamicImage);
     }
 
@@ -329,6 +330,7 @@ function selectCamperDashboard(camperId) {
   
   hasUserParam = true;
   activeUser = camperId;
+  window.activeUser = camperId;
   
   initUI();
   fetchTelemetry();
@@ -342,9 +344,11 @@ function switchDashboard(camperId) {
     newUrl += "?u=" + camperId;
     hasUserParam = true;
     activeUser = camperId;
+    window.activeUser = camperId;
   } else {
     hasUserParam = false;
     activeUser = "";
+    window.activeUser = "";
   }
   
   window.history.pushState({ path: newUrl }, '', newUrl);
@@ -385,6 +389,53 @@ function syncNavUI() {
   }
 }
 
+// Map any status text to one of the 11 available status photography files (009/011 alignment)
+function resolveStatusImage(statusText) {
+  if (!statusText) return "normal";
+  const status = statusText.toLowerCase();
+  
+  if (status.includes("sleep") || status.includes("nap") || status.includes("bed")) {
+    return "sleeping";
+  }
+  if (status.includes("drink") || status.includes("beer") || status.includes("pub") || status.includes("pint") || status.includes("beverage")) {
+    return "drinking";
+  }
+  if (status.includes("eat") || status.includes("food") || status.includes("dinner") || status.includes("lunch") || status.includes("hungry") || status.includes("eating")) {
+    return "eating";
+  }
+  if (status.includes("wet") || status.includes("toilet") || status.includes("pee") || status.includes("poo") || status.includes("bathroom") || status.includes("shower")) {
+    return "wet";
+  }
+  if (status.includes("lecture") || status.includes("talk") || status.includes("presentation") || status.includes("stage")) {
+    return "lecture";
+  }
+  if (status.includes("workshop") || status.includes("lab") || status.includes("hack") || status.includes("coding") || status.includes("code")) {
+    return "workshop";
+  }
+  if (status.includes("roam") || status.includes("walk") || status.includes("step") || status.includes("tent") || status.includes("explore") || status.includes("outside")) {
+    return "roaming";
+  }
+  if (status.includes("tire") || status.includes("exhaust") || status.includes("weary")) {
+    return "tired";
+  }
+  if (status.includes("chill") || status.includes("relax") || status.includes("rest") || status.includes("sitting")) {
+    return "chilling";
+  }
+  if (status.includes("annoy") || status.includes("mad") || status.includes("angry") || status.includes("sad") || status.includes("frustrat")) {
+    return "annoyed";
+  }
+  
+  // Fuzzy-match against the 11 exact filenames
+  const canonical = ["workshop", "wet", "tired", "sleeping", "roaming", "normal", "lecture", "eating", "drinking", "chilling", "annoyed"];
+  for (const name of canonical) {
+    if (status.includes(name)) {
+      return name;
+    }
+  }
+  
+  return "normal";
+}
+
 // Jittered Polling Execution with Page Visibility throttling
 function scheduleRefresh() {
   if (!hasUserParam) return;
@@ -403,6 +454,7 @@ window.addEventListener("popstate", () => {
   const urlParams = new URLSearchParams(window.location.search);
   hasUserParam = urlParams.has("u") || urlParams.has("user_id");
   activeUser = urlParams.get("u") || urlParams.get("user_id") || "hvy";
+  window.activeUser = activeUser;
   
   // Ensure unrecognized redirects to intro
   if (hasUserParam && !USER_NAMES[activeUser]) {
