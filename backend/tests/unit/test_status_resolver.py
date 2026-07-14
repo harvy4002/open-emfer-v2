@@ -40,11 +40,11 @@ def test_status_resolver_default_and_normalization():
     data = json.loads(body)
     assert data["status"] == "normal"  # Should default to lowercase "normal"
     
-    # 2. Post a custom status containing mixed-case text
+    # 2. Post a custom status containing mixed-case text using 'type' representing admin panel
     status_post, _, _ = sim_server.process_api_post("/beer", {
         "user_id": user_id,
         "event": "status",
-        "status": "Sleeping"
+        "type": "Sleeping"
     }, auth_key)
     assert status_post == 201
     
@@ -57,3 +57,9 @@ def test_status_resolver_default_and_normalization():
     assert status_get_2 == 200
     data_2 = json.loads(body_2)
     assert data_2["status"] == "sleeping"  # Must normalize "Sleeping" -> "sleeping"
+    
+    # 4. Verify that the aggregate totals record was successfully updated with status
+    agg_key = f"camper#aggregates#{user_id}"
+    user_totals = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals is not None
+    assert user_totals.get("status") == "sleeping"

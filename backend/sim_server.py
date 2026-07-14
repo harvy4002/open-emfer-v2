@@ -219,7 +219,8 @@ def process_playback(user_id, until_timestamp):
         "user_id": user_id,
         "total_drinks": 0,
         "beer_drinks": 0,
-        "categories": {}
+        "categories": {},
+        "status": "normal"
     }
     
     for event in events:
@@ -238,10 +239,13 @@ def process_playback(user_id, until_timestamp):
                 totals["beer_drinks"] = max(0, int(totals["beer_drinks"]) + val_offset)
         elif event_type in ["Toilet", "Lecture", "Workshop", "Gaming", "Tent", "NewPeople", "Martini"]:
             totals["categories"][name] = max(0, int(totals["categories"].get(name, 0)) + val_offset)
+        elif event_type.lower() == "status":
+            totals["status"] = name.lower()
         elif event_type == "Reset" and name == "ResetDay":
             totals["categories"] = {}
             totals["total_drinks"] = 0
             totals["beer_drinks"] = 0
+            totals["status"] = "normal"
             
     return totals, len(events)
 
@@ -420,10 +424,13 @@ def process_api_post(path, payload, auth_header):
                 user_totals["beer_drinks"] = max(0, int(user_totals["beer_drinks"]) + val_offset)
         elif event_type in ["Toilet", "Lecture", "Workshop", "Gaming", "Tent", "NewPeople", "Martini"]:
             user_totals["categories"][name] = max(0, int(user_totals["categories"].get(name, 0)) + val_offset)
+        elif event_type.lower() == "status":
+            user_totals["status"] = name.lower()
         elif event_type == "Reset" and name == "ResetDay":
             user_totals["categories"] = {}
             user_totals["total_drinks"] = 0
             user_totals["beer_drinks"] = 0
+            user_totals["status"] = "normal"
             
         db_put_item(user_key, "totals", user_totals)
         
@@ -443,11 +450,14 @@ def process_api_post(path, payload, auth_header):
                 combined_totals["beer_drinks"] = max(0, int(combined_totals["beer_drinks"]) + val_offset)
         elif event_type in ["Toilet", "Lecture", "Workshop", "Gaming", "Tent", "NewPeople", "Martini"]:
             combined_totals["categories"][name] = max(0, int(combined_totals["categories"].get(name, 0)) + val_offset)
+        elif event_type.lower() == "status":
+            combined_totals["status"] = name.lower()
         elif event_type == "Reset" and name == "ResetDay":
             combined_totals["categories"] = {}
             combined_totals["total_drinks"] = 0
             combined_totals["beer_drinks"] = 0
             combined_totals["leaderboard"] = []
+            combined_totals["status"] = "normal"
             
         # 3. Update Leaderboard Standing (FR-003)
         leaderboard = combined_totals.get("leaderboard", [])
