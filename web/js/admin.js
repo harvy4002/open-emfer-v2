@@ -81,7 +81,7 @@ async function syncState() {
   
   try {
     // 1. Fetch Beer/Drinks/Toilet aggregates
-    const resBeer = await fetch(`${API_BASE}/beer?user_id=${activeUser}`);
+    const resBeer = await fetch(`${API_BASE}/beer?user_id=${activeUser}&_=${Date.now()}`);
     if (resBeer.ok) {
       const data = await resBeer.json();
       const categories = data.categories || {};
@@ -100,7 +100,7 @@ async function syncState() {
     }
     
     // 2. Fetch Steps telemetry from /history
-    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}`);
+    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}&_=${Date.now()}`);
     if (resHistory.ok) {
       const data = await resHistory.json();
       const steps = data.cumulative_steps || 0;

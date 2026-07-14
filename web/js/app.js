@@ -152,7 +152,7 @@ async function fetchTelemetry() {
 
   try {
     // 1. Fetch aggregates
-    const resAggs = await fetch(`${API_BASE}/beer?user_id=${activeUser}`);
+    const resAggs = await fetch(`${API_BASE}/beer?user_id=${activeUser}&_=${Date.now()}`);
     if (!resAggs.ok) throw new Error("Aggregates fetch failure");
     const data = await resAggs.json();
 
@@ -166,7 +166,7 @@ async function fetchTelemetry() {
     }
 
     // 2. Fetch history (steps & temperature & GPS location history map)
-    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}`);
+    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}&_=${Date.now()}`);
     if (resHistory.ok) {
       const historyData = await resHistory.json();
       document.getElementById("stepsVal").textContent = Number(historyData.cumulative_steps || 0).toLocaleString();
@@ -188,7 +188,7 @@ async function fetchTelemetry() {
     }
 
     // 3. Fetch status text (StatusLatestResponse)
-    const resStatus = await fetch(`${API_BASE}/beer?event=status&type=latest&user_id=${activeUser}`);
+    const resStatus = await fetch(`${API_BASE}/beer?event=status&type=latest&user_id=${activeUser}&_=${Date.now()}`);
     if (resStatus.ok) {
       const statusData = await resStatus.json();
       const statusText = statusData.status || "Chilling";
@@ -204,7 +204,7 @@ async function fetchTelemetry() {
     }
 
     // 4. Fetch Monzo expenses
-    const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}`);
+    const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}&_=${Date.now()}`);
     if (resExpenses.ok) {
       const expenseData = await resExpenses.json();
       document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;
