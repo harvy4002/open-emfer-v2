@@ -264,7 +264,7 @@ def process_api_get(path, query_params):
                 event_type = latest_event.get("event_type")
                 payload = latest_event.get("payload") or {}
                 
-                if event_type == "status":
+                if event_type.lower() == "status":
                     status_text = payload.get("status") or payload.get("type") or "normal"
                 elif event_type == "Drinks":
                     status_text = "drinking"
