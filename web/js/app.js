@@ -199,7 +199,7 @@ async function fetchTelemetry() {
 
       // Resolve status photo file path dynamically using keyword matching (009/011 alignment)
       const resolvedFileKeyword = resolveStatusImage(statusText);
-      const dynamicImage = `/${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
+      const dynamicImage = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
       document.getElementById("camper-status-image").setAttribute("src", dynamicImage);
     }
 
@@ -553,9 +553,9 @@ document.addEventListener("visibilitychange", () => {
         imgEl.onerror = function() {
           if (this.src.indexOf('_normal.jpg') !== -1) {
             this.onerror = null;
-            this.src = '/hvy_status/hvy_normal.jpg';
+            this.src = 'hvy_status/hvy_normal.jpg';
           } else {
-            this.src = '/' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg';
+            this.src = '' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg';
           }
         };
         const currentSrc = imgEl.getAttribute("src");
