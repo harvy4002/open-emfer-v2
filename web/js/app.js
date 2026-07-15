@@ -542,14 +542,14 @@ function loadStatusImage(resolvedFileKeyword) {
   const fallbackSrc = `${activeUser}_status/${activeUser}_normal.jpg`;
 
   imgEl.onerror = function() {
-    // If the .jpg version failed (and it's not the normal/fallback image), try the .png version
-    if (this.src.endsWith(".jpg") && this.src.indexOf("_normal.jpg") === -1) {
+    // If the .jpg version failed (even if it's the normal/fallback image), try the .png version
+    if (this.src.endsWith(".jpg")) {
       this.src = pngSrc;
     } else if (this.src.endsWith(".png")) {
-      // If the .png version also failed, fall back to the normal status image (.jpg)
+      // If the .png version also failed, fall back to the active user's standard normal status image (.jpg)
       this.src = fallbackSrc;
     } else {
-      // Prevent infinite loops if fallback fails
+      // Prevent infinite loops if both .jpg and .png of both keyword and fallback fail
       this.onerror = null;
       this.src = "hvy_status/hvy_normal.jpg";
     }
