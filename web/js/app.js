@@ -160,6 +160,9 @@ async function fetchTelemetry() {
     document.getElementById("total-drinks-counter").textContent = data.total_drinks || 0;
     document.getElementById("beer-drinks-counter").textContent = `Beer subsets: ${data.beer_drinks || 0}`;
 
+    // Update Drinks Breakdown (FR-004 / FR-005 / FR-006)
+    updateDrinksBreakdown(data.categories || {});
+
     // Update Leaderboard if Combined view
     if (activeUser === "combined") {
       updateLeaderboard(data.leaderboard || []);
@@ -527,6 +530,61 @@ function loadStatusImage(resolvedFileKeyword) {
   };
 
   imgEl.src = jpgSrc;
+}
+
+// Render a detailed drinks breakdown on the public dashboard (FR-004 / FR-005 / FR-006)
+function updateDrinksBreakdown(categories) {
+  const listEl = document.getElementById("drinks-breakdown-list");
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+  
+  // Define emojis or display text map for beverage categories to make them visually pleasing!
+  const emojiMap = {
+    "Water": "💧",
+    "Coffee": "☕",
+    "Tea": "🍵",
+    "Soft": "🥤",
+    "Lager": "🍺",
+    "IPA": "🍺",
+    "Cider": "🍺",
+    "Ale": "🍺",
+    "Martini": "🍸",
+    "G+T": "🍹",
+    "Negroni": "🥃",
+    "Port": "🍷",
+    "Stout": "🍺",
+    "Porter": "🍺"
+  };
+
+  let hasBreakdown = false;
+
+  // Filter and sort categories where count is strictly greater than 1 (count >= 2)
+  const breakdownItems = Object.entries(categories)
+    .filter(([name, count]) => {
+      const countInt = parseInt(count, 10) || 0;
+      // Filter out non-beverage or internal metadata keys (e.g. toilet visits, sync status, etc.)
+      const isInternalMetadata = ["toilet_visits", "ToiletVisit", "Start", "Pee", "Poo"].includes(name);
+      return !isInternalMetadata && countInt >= 2;
+    })
+    .sort((a, b) => b[1] - a[1]); // Sort descending by consumed count for highest signal
+
+  if (breakdownItems.length > 0) {
+    breakdownItems.forEach(([name, count]) => {
+      const emoji = emojiMap[name] || "🥤";
+      const tagSpan = document.createElement("span");
+      tagSpan.className = "tag is-dark has-text-weight-bold";
+      tagSpan.style.border = "1px solid #ff780a";
+      tagSpan.style.color = "#ff780a";
+      tagSpan.textContent = `${name} ${emoji}: ${count}`;
+      listEl.appendChild(tagSpan);
+    });
+    hasBreakdown = true;
+  }
+
+  if (!hasBreakdown) {
+    listEl.innerHTML = `<span class="has-text-grey is-size-7">None logged (>1) yet</span>`;
+  }
 }
 
 // Jittered Polling Execution with Page Visibility throttling

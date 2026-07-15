@@ -101,6 +101,10 @@ async function syncState() {
       updateDisplayCount("IPA", categories["IPA"] || 0);
       updateDisplayCount("Cider", categories["Cider"] || 0);
       updateDisplayCount("Ale", categories["Ale"] || 0);
+      updateDisplayCount("Martini", categories["Martini"] || 0);
+      updateDisplayCount("G+T", categories["G+T"] || 0);
+      updateDisplayCount("Negroni", categories["Negroni"] || 0);
+      updateDisplayCount("Port", categories["Port"] || 0);
       updateDisplayCount("Pee", categories["Pee"] || 0);
       updateDisplayCount("Poo", categories["Poo"] || 0);
     }

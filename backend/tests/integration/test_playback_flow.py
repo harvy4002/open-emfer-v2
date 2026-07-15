@@ -93,3 +93,60 @@ def test_playback_chronological_state_reconstruction():
     state_2 = data_2["reconstructed_state"]
     assert state_2["categories"]["IPA"] == 2
     assert state_2["categories"]["Pee"] == 1
+
+def test_spirits_playback_chronological():
+    """Verify that chronological event-sourced playback correctly reconstructs Martini and Port tallies."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Post Martini (12:00)
+    payload_m = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "Martini"
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload_m, auth_key)
+    assert status == 201
+    
+    # Capture intermediate timestamp
+    time.sleep(0.01)
+    intermediate_timestamp = datetime.now().isoformat() + "Z"
+    time.sleep(0.01)
+    
+    # 2. Post Port (13:00)
+    payload_p = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "Port"
+    }
+    status_2, _, _ = sim_server.process_api_post("/beer", payload_p, auth_key)
+    assert status_2 == 201
+    
+    # Capture final timestamp
+    time.sleep(0.01)
+    final_timestamp = datetime.now().isoformat() + "Z"
+    
+    # 3. Query playback at intermediate boundary
+    status_get, _, body = sim_server.process_api_get("/playback", {
+        "user_id": user_id,
+        "until": intermediate_timestamp
+    })
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["events_processed"] == 1
+    state = data["reconstructed_state"]
+    assert state["categories"]["Martini"] == 1
+    assert "Port" not in state["categories"]
+    
+    # 4. Query playback at final boundary
+    status_get_2, _, body_2 = sim_server.process_api_get("/playback", {
+        "user_id": user_id,
+        "until": final_timestamp
+    })
+    assert status_get_2 == 200
+    data_2 = json.loads(body_2)
+    assert data_2["events_processed"] == 2
+    state_2 = data_2["reconstructed_state"]
+    assert state_2["categories"]["Martini"] == 1
+    assert state_2["categories"]["Port"] == 1
+

@@ -182,10 +182,19 @@
       <div class="columns is-multiline grid-container">
         <!-- Drinks totals panel -->
         <div class="column is-6-mobile is-4-tablet is-3-desktop">
-          <div class="metric-card">
-            <div class="metric-title">Drinks Intake</div>
-            <div class="metric-value" id="total-drinks-counter">0</div>
-            <div class="metric-sub" id="beer-drinks-counter">Beer subsets: 0</div>
+          <div class="metric-card" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 170px;">
+            <div>
+              <div class="metric-title">Drinks Intake</div>
+              <div class="metric-value" id="total-drinks-counter">0</div>
+              <div class="metric-sub mb-3" id="beer-drinks-counter">Beer subsets: 0</div>
+            </div>
+            <!-- Dynamic Drinks Breakdown Panel (FR-004 / FR-005) -->
+            <div style="border-top: 1px solid #2c2f33; padding-top: 0.75rem; margin-top: 0.5rem;" id="drinks-breakdown-panel">
+              <div class="heading has-text-grey mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">DRINKS BREAKDOWN</div>
+              <div id="drinks-breakdown-list" class="tags" style="gap: 0.35rem; margin-bottom: 0;">
+                <span class="has-text-grey is-size-7">None logged (>1) yet</span>
+              </div>
+            </div>
           </div>
         </div>
 

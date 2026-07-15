@@ -96,3 +96,36 @@ def test_location_history_bounds_cap():
     assert status_get == 200
     data = json.loads(body)
     assert len(data["location_history"]) == 20
+
+def test_spirit_drinks_aggregation():
+    """Verify that logging Martini, G+T, Negroni, and Port increments total_drinks but NOT beer_drinks."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Log a G+T
+    payload_gt = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "G+T"
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload_gt, auth_key)
+    assert status == 201
+    
+    # 2. Log a Negroni
+    payload_negroni = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "Negroni"
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload_negroni, auth_key)
+    assert status == 201
+    
+    # 3. Get totals and assert counts
+    status_get, _, body = sim_server.process_api_get("/beer", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["total_drinks"] == 2
+    assert data["beer_drinks"] == 0
+    assert data["categories"].get("G+T") == 1
+    assert data["categories"].get("Negroni") == 1
+
