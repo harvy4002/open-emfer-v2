@@ -1,4 +1,4 @@
-# Feature Specification: Browser Notifications Scheduler
+# Feature Specification: Web Push Notifications Scheduler
 
 **Feature Branch**: `017-browser-notifications-scheduler`
 
@@ -6,74 +6,76 @@
 
 **Status**: Draft
 
-**Input**: User description: "allow the participant subscribe to browser notifications. There should be a toggle to subscribe to the notifications and then an option to set the time between the notifications. The notification is to remind the participant to fill in their stats."
+**Input**: User description: "allow the participant subscribe to browser notifications. There should be a toggle to subscribe to the notifications and then an option to set the time between the notifications. The notification is to remind the participant to fill in their stats. Upgrade to Option A: Web Push for mobile background closed-browser delivery."
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Notification Subscription Switch (Priority: P1)
+### User Story 1 - Web Push Subscription Toggle (Priority: P1)
 
-As an admin portal user, I want a touch-friendly toggle on my manual logging screen to subscribe to browser reminder notifications, so that I can easily authorize or revoke reminder alerts.
+As an admin portal user, I want a touch-friendly toggle on my manual logging screen to subscribe to browser reminder notifications, so that the system can securely push alerts to my mobile phone even if my browser is completely closed.
 
-**Why this priority**: Core subscription gateway. Without user authorization and permission granting, notifications cannot display in modern secure browsers.
+**Why this priority**: Core subscription gateway. Secure context registrations and permission granting are required before any push payloads can be processed.
 
-**Independent Test**: Load the admin logging portal `/admin.html`. Find the "Telemetry Reminder Notifications" panel, and toggle the switch to "On". Confirm that the native browser permission dialog pops up, and granting permission updates the cached state to "Subscribed".
+**Independent Test**: Load the admin logging portal `/admin.html`. Find the "Telemetry Reminder Notifications" panel, and toggle the switch to "On". Confirm that the browser requests notification permission, registers the Service Worker, and successfully POSTs the subscription object to `/push-subscribe`.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user has not previously granted permission, **When** they toggle the reminder switch to "On", **Then** the browser requests native notification permission.
-2. **Given** a user has already granted permission, **When** they load the page, **Then** the toggle switch defaults to "On" based on cached `localStorage` state.
-3. **Given** a user toggles the switch to "Off", **When** they verify, **Then** all background notification timers are completely stopped.
+1. **Given** a user has not previously granted permission, **When** they toggle the reminder switch to "On", **Then** the browser requests native notification permission and registers `/sw.js`.
+2. **Given** Charlotte is subscribed, **When** she toggles the switch to "Off", **Then** the browser unsubscribes her from the push service and notifies the backend to delete her registration.
 
 ---
 
-### User Story 2 - Customizable Reminder Interval Dropdown (Priority: P2)
+### User Story 2 - Customizable Reminder Interval (Priority: P2)
 
-As a subscribed participant, I want to configure the time interval between reminders (e.g., 1 hour, 2 hours, 4 hours, or a 1-minute test option) from a select dropdown, so that I can schedule alerts that fit my pace.
+As a subscribed participant, I want to configure the time interval between reminders (e.g., 1 hour, 2 hours, 1 minute test option) from a select dropdown, so that the server-side cron scheduler triggers pushes at my chosen pace.
 
-**Why this priority**: Crucial for usability. Prevents spam and allows developers/participants to quickly verify the notifications work using the short test options.
+**Why this priority**: Crucial for operational usability and power saving.
 
-**Independent Test**: Select the "1 Minute (Testing)" option from the interval select menu on `/admin.html`. Confirm that a notification is triggered exactly 60 seconds later, and that changing the option instantly cancels the old scheduler and runs the new schedule.
+**Independent Test**: Select the "1 Minute (Test Option)" from the interval select menu on `/admin.html`. Confirm that a server-side daemon or EventBridge trigger dispatches a push notification exactly 60 seconds later.
 
 **Acceptance Scenarios**:
 
-1. **Given** the user is subscribed, **When** they select "2 Hours" from the interval menu, **Then** the browser saves the interval selection to `localStorage` and schedules the recurring background reminder.
-2. **Given** the user is subscribed, **When** they change the interval from "1 Hour" to "4 Hours", **Then** the previous background interval loop is cleanly destroyed and rescheduled for the new 4-hour period.
+1. **Given** the user is subscribed, **When** they select "1 Hour" from the interval menu, **Then** the browser sends the selected interval to the backend `/push-subscribe` route, updating their database aggregate `last_notified_time`.
 
 ---
 
 ### User Story 3 - Interactive Focus and Portal Launch (Priority: P3)
 
-As a participant, when I click on a received reminder notification, I want my browser to automatically focus or reload my personal Logging Portal page, so that I can immediately type or tap my stats.
+As a participant, when I click on a received reminder notification banner on my mobile device, I want my browser to automatically focus or open my personal Logging Portal page, so that I can instantly record my stats.
 
-**Why this priority**: Simplifies the log transaction workflow by closing the loop between receiving the reminder and acting on it.
+**Why this priority**: Completes the loop between prompt and action.
 
-**Independent Test**: Lock your screen or switch to another tab. When the reminder notification fires, click on the notification pop-up. Verify that the browser immediately refocuses Charlotte's active logging portal `/admin.html?u=cha`.
+**Independent Test**: Switch tabs or lock your screen. When the push notification banner fires, tap it. Verify that the browser immediately closes the banner and refocuses Charlotte's active logging portal `/admin.html?u=cha`.
 
 **Acceptance Scenarios**:
 
-1. **Given** the participant has clicked on a received telemetry reminder, **When** the browser processes the click, **Then** the browser focuses the existing `/admin.html` page.
+1. **Given** the participant has tapped a received telemetry reminder, **When** the service worker processes the click, **Then** the browser refocuses the existing `/admin.html` page.
 
 ---
 
 ### Edge Cases
 
-- **User Denied Permission**: If the user selects "Deny" on the browser's permission dialog, the portal switch MUST automatically toggle back to "Off" and display a friendly, high-contrast warning (e.g. "Notifications blocked by browser settings").
-- **Tab Inactivity**: Since the scheduler runs in a background tab, modern browsers may throttle `setInterval` loops. The timer must handle wake/resume checks on tab activation to fire overdue reminders.
+- **User Revokes Browser Permissions**: If the browser's native notification settings are manually revoked, the frontend must detect this on load, toggle the switch to "Off", and alert the backend.
+- **Server Push Failures**: If `pywebpush` returns a `410 Gone` (meaning the subscription has expired or been revoked by the browser), the backend must gracefully delete the subscription from the user's aggregate database record.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001 (Responsive Switch Control)**: The manual logging portal (`web/admin.html`) MUST display a dedicated, Bulma-styled card panel containing a toggle/switch to subscribe/unsubscribe to reminder alerts.
-- **FR-002 (Flexible Interval Selection)**: The logging portal (`web/admin.html`) MUST include a dropdown select list mapping intervals of: `1 Minute (Test)`, `5 Minutes (Test)`, `1 Hour`, `2 Hours`, `4 Hours`, and `8 Hours`.
-- **FR-003 (W3C Notification Binding)**: The admin controller (`web/js/admin.js`) MUST request permission using the standard browser `Notification.requestPermission()` API on toggle activation.
-- **FR-004 (Robust Scheduling Loop)**: The controller (`web/js/admin.js`) MUST manage background interval loops using `setInterval()` mapping the configured interval to trigger custom browser notification blocks containing reminder copy.
-- **FR-005 (Refocus Tap Behavior)**: The generated `Notification` instance MUST override the `onclick` handler to refocus or open the current `window` context.
-- **FR-006 (Persistent Local Storage Caching)**: The subscription status (enabled/disabled boolean) and selected interval value MUST be saved to `localStorage` and restored on page initialization.
+- **FR-001 (Web Manifest & SW registration)**: The static frontend MUST provide a Web App Manifest `web/manifest.json` and a Service Worker `web/sw.js` to enable background push capabilities.
+- **FR-002 (PushManager Subscription)**: The admin controller (`web/js/admin.js`) MUST use the browser's native `PushManager.subscribe()` API with a VAPID public key on toggle activation, generating standard endpoint and crypto keys (p256dh, auth).
+- **FR-003 (Subscription API Route)**: The backend API Gateway router (`backend/sim_server.py`) MUST expose a `POST /push-subscribe` endpoint that securely stores the user's push subscription JSON and selected `interval_minutes` in their aggregate totals database record.
+- **FR-004 (Encrypted Payload Dispatcher)**: The backend (`backend/sim_server.py`) MUST run a background daemon scheduler (or EventBridge Lambda rule) that utilizes the `pywebpush` library to sign (using VAPID private key) and encrypt push payloads to registered endpoints when the interval lapses.
+- **FR-005 (Service Worker Push Listener)**: The background Service Worker (`web/sw.js`) MUST listen for the standard `push` event, parse the decrypted payload, and display a native notification reminder containing custom, user-specific copy.
+- **FR-006 (Interactive Notification Click)**: The Service Worker (`web/sw.js`) MUST listen for the `notificationclick` event and utilize standard client focus APIs (`clients.openWindow()` or `window.focus()`) to bring the portal `/admin.html` to the foreground.
 
 ### Key Entities
 
-This feature operates purely as a **browser-native, client-side** system with **zero** backend/database tables or server compute requirements, maintaining complete compliance with Principle VII (Cost-Optimized Static Frontend).
+- **PushSubscription**: Caches client-specific endpoints. Stored inside the singleton aggregate record `camper#aggregates#<user_id>` totals partition.
+  - `endpoint`: W3C push endpoint URL
+  - `keys`: Encryption keys (p256dh and auth strings)
+  - `interval_minutes`: Interval selection (integer)
+  - `last_notified_time`: ISO UTC timestamp of last fired alert
 
 ---
 
@@ -81,12 +83,12 @@ This feature operates purely as a **browser-native, client-side** system with **
 
 ### Measurable Outcomes
 
-- **SC-001**: Notification permissions are requested instantly upon toggling the switch to "On".
-- **SC-002**: Under "1 Minute" test intervals, notifications fire exactly 60 seconds (±1s precision) after scheduling, with 100% reliability.
-- **SC-003**: Clicks on received notification banners successfully focus or reopen the `/admin.html` browser tab in under 100ms.
-- **SC-004**: Toggling the switch to "Off" instantly and completely tears down all background `setInterval` timers, preventing further alerts.
+- **SC-001**: Notification permissions and push registrations are requested instantly upon toggling the switch to "On".
+- **SC-002**: Tapping the notification banner successfully opens or focuses the `/admin.html` tab in under 200ms.
+- **SC-003**: The background scheduler dispatches standard W3C encrypted push payloads to browser push endpoints within 60 seconds (±5s precision) under test intervals.
+- **SC-004**: 100% of expired push subscriptions (`410 Gone` status returns) are cleanly pruned from the active database aggregates.
 
 ## Assumptions
 
-- **Local Storage Reliability**: `localStorage` is assumed to be fully supported and enabled in the participant's browser environment.
-- **HTTPS/Secure Context Requirements**: Since browser notification APIs require a secure context (HTTPS) or `localhost` to request permission, we assume this page is served over HTTPS in production or localhost during camp testing.
+- **W3C Standard Compliance**: Mobile and desktop browsers are assumed to fully support standard Service Worker push mechanics and native Notification interfaces.
+- **Secure Context Requirements**: The static portal is served over HTTPS in production or localhost during local development to satisfy browser security bounds.

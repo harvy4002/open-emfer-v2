@@ -1,4 +1,4 @@
-# Tasks: Browser Notifications Scheduler
+# Tasks: Web Push Notification Scheduler
 
 **Input**: Design documents from `/specs/017-browser-notifications-scheduler/`
 
@@ -19,45 +19,52 @@
 **Purpose**: Project and workspace environment initialization
 
 - [x] T001 Verify active specifications context under specs/017-browser-notifications-scheduler/
+- [x] T002 Add and install pywebpush dependency inside the project environment
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Since this feature operates 100% client-side with zero backend/database dependencies, we skip server-side foundation stages.
+**Purpose**: Core VAPID key generation and script configurations that MUST be complete before ANY user story can be implemented
 
-- [x] T002 Verify standard browser Notification API is available in active web sandbox environments
+- [x] T003 Generate the public and private VAPID keys using python cryptography, and store them securely in backend/sim_server.py
+- [x] T004 [P] Store the public VAPID key in window.EMF_CONFIG inside web/js/config.js to allow client-side PushManager bindings
 
-**Checkpoint**: Core foundation checked - user story implementation can now begin
+**Checkpoint**: Foundation ready - user story implementation can now begin
 
 ---
 
-## Phase 3: User Story 1 - Notification Subscription Switch (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Web Push Subscription Toggle (Priority: P1) 🎯 MVP
 
-**Goal**: Render the toggle switch panel and implement the standard W3C Notification permission requesting and localStorage caching.
+**Goal**: Create manifest, service worker, and subscription API routes, enabling secure context push subscriptions.
 
-**Independent Test**: Load `/admin.html?u=cha` and toggle the notification switch to "On". Grant permissions and confirm local storage caches `"true"`.
+**Independent Test**: Load `/admin.html?u=cha` and toggle notifications switch to "On". Confirm that sw.js registers, permissions are requested, and subscription payload POSTs to /push-subscribe successfully.
+
+### Tests for User Story 1
+
+- [x] T005 [P] [US1] Add a unit test in backend/tests/unit/test_math_helpers.py asserting that POSTing to /push-subscribe correctly stores W3C subscription endpoints in Charlotte's aggregates record
 
 ### Implementation for User Story 1
 
-- [x] T003 [P] [US1] Create the Bulma-styled panel structure and toggle switch inside web/admin.html for the notifications settings card
-- [x] T004 [P] [US1] Implement change listeners, W3C permissions requesting Notification.requestPermission() and localStorage caching of subscription states inside web/js/admin.js
+- [x] T006 [P] [US1] Create the standard Web App Manifest web/manifest.json and link it inside web/admin.html head to enable mobile PWA notifications capabilities
+- [x] T007 [P] [US1] Create the background Service Worker web/sw.js to listen for standard push events and display native notification reminders
+- [x] T008 [P] [US1] Refactor subscription switch and W3C PushManager.subscribe() logic inside web/js/admin.js to bind using the public VAPID key
+- [x] T009 [P] [US1] Implement the POST /push-subscribe endpoint inside backend/sim_server.py to securely store push subscription JSON tokens in individual camper aggregates
 
 **Checkpoint**: At this point, User Story 1 is fully functional and testable independently.
 
 ---
 
-## Phase 4: User Story 2 - Customizable Reminder Interval Dropdown (Priority: P2)
+## Phase 4: User Story 2 - Customizable Reminder Interval (Priority: P2)
 
-**Goal**: Implement customizable scheduler loops and intervals using standard background `setInterval` timers.
+**Goal**: Implement interval setting propagation on the frontend and server-side background schedulers utilizing pywebpush.
 
-**Independent Test**: Select "1 Minute (Test Option)", minimize the tab, and confirm a notification is delivered 60 seconds later.
+**Independent Test**: Select "1 Minute (Test Option)", minimize the tab, and confirm a notification is pushed 60 seconds later.
 
 ### Implementation for User Story 2
 
-- [x] T005 [P] [US2] Add the dropdown select element mapping the configurable intervals inside web/admin.html next to the toggle switch
-- [x] T006 [P] [US2] Implement active interval select change handlers and setInterval scheduling loops inside web/js/admin.js
-- [x] T007 [P] [US2] Implement global interval timer teardown and clearInterval() cleanup logic on unsubscribe/disable in web/js/admin.js
+- [x] T010 [P] [US2] Implement interval select change triggers in web/js/admin.js to instantly POST updated interval preferences to the backend
+- [x] T011 [P] [US2] Implement the server-side cron dispatcher background thread (or loop) inside backend/sim_server.py to check and fire pywebpush alerts on interval lapses
 
 **Checkpoint**: At this point, User Stories 1 and 2 are fully functional and integrated.
 
@@ -65,13 +72,13 @@
 
 ## Phase 5: User Story 3 - Interactive Focus and Portal Launch (Priority: P3)
 
-**Goal**: Override the `onclick` handler of the generated `Notification` instance to bring `/admin.html` immediately to the foreground.
+**Goal**: Implement Service Worker click actions to bring `/admin.html` instantly to the foreground.
 
-**Independent Test**: Tap the fired notification and verify it instantly refocuses the Logging Portal.
+**Independent Test**: Tap the received notification and verify it focuses the Logging Portal.
 
 ### Implementation for User Story 3
 
-- [x] T008 [P] [US3] Add the on-click focus handler window.focus() on generated standard Notification object instances inside web/js/admin.js
+- [x] T012 [P] [US3] Add the on-click refocus event listener notificationclick in web/sw.js to bring administrative windows immediately to the foreground
 
 **Checkpoint**: All user stories are now fully functional and verified.
 
@@ -81,8 +88,8 @@
 
 **Purpose**: Verification and validation checks across all components
 
-- [x] T009 Run the quickstart.md validation guide scenarios end-to-end to confirm feature success
-- [x] T010 Run full Python test suites to ensure complete codebase health and zero regressions
+- [x] T013 Run the quickstart.md validation guide scenarios end-to-end to confirm feature success
+- [x] T014 Run full Python test suites to ensure complete codebase health and zero regressions
 
 ---
 

@@ -179,4 +179,36 @@ def test_lazy_daily_reset():
     assert user_totals_after["total_drinks"] == 1
     assert user_totals_after["all_time_total_drinks"] == 2
 
+def test_push_subscribe_storage():
+    """Verify that posting a push subscription securely registers and stores it in the aggregate."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    payload = {
+        "user_id": user_id,
+        "subscription": {
+            "endpoint": "https://fcm.googleapis.com/fcm/send/sample-token",
+            "keys": {
+                "p256dh": "sample-p256dh-key",
+                "auth": "sample-auth-secret"
+            }
+        },
+        "interval_minutes": 120
+    }
+    
+    # 1. Post subscription
+    status, _, body = sim_server.process_api_post("/push-subscribe", payload, auth_key)
+    assert status == 201
+    data = json.loads(body)
+    assert data["status"] == "success"
+    
+    # 2. Retrieve aggregate and assert values
+    agg_key = f"camper#aggregates#{user_id}"
+    user_totals = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals["push_subscription"]["endpoint"] == "https://fcm.googleapis.com/fcm/send/sample-token"
+    assert user_totals["push_subscription"]["keys"]["p256dh"] == "sample-p256dh-key"
+    assert user_totals["push_interval_minutes"] == 120
+    assert user_totals["push_last_notified_time"] is not None
+
+
 

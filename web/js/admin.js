@@ -252,9 +252,24 @@ async function triggerReset() {
   await submitLog("Reset", "ResetDay");
 }
 
-// --- Reminder Notifications System (W3C Notifications, localStorage, US1/US2/US3) ---
+// --- Reminder Notifications System (W3C Web Push, Service Workers, US1/US2/US3) ---
 
-function initNotificationsUI() {
+function urlB64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function initNotificationsUI() {
   const isEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
   const intervalVal = localStorage.getItem("reminder_notifications_interval") || "60";
 
@@ -267,14 +282,25 @@ function initNotificationsUI() {
   // Restore cached dropdown selection
   selectMenu.value = intervalVal;
 
-  if (isEnabled && Notification.permission === "granted") {
-    setNotificationsActive(true);
-  } else {
-    setNotificationsActive(false);
-    // Sync localStorage if permission was manually revoked in browser settings
-    if (Notification.permission !== "granted") {
-      localStorage.setItem("reminder_notifications_enabled", "false");
+  if ("serviceWorker" in navigator && "PushManager" in window) {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js");
+      console.log("[Service Worker] Registered successfully:", reg);
+      
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && isEnabled && Notification.permission === "granted") {
+        setNotificationsActive(true);
+      } else {
+        setNotificationsActive(false);
+      }
+    } catch (err) {
+      console.error("[Service Worker] Registration failed:", err);
+      setNotificationsActive(false);
     }
+  } else {
+    toggleBtn.setAttribute("disabled", "true");
+    statusHelp.textContent = "❌ Web Push is not supported by your browser/context.";
+    statusHelp.style.color = "#ff3860";
   }
 }
 
@@ -287,54 +313,82 @@ function setNotificationsActive(active) {
     toggleBtn.textContent = "Enabled  ✅";
     toggleBtn.className = "button is-success is-fullwidth touch-btn";
     selectMenu.removeAttribute("disabled");
-    statusHelp.textContent = "✓ Reminders active. You will receive stats reminders at the selected interval.";
+    statusHelp.textContent = "✓ Server-side W3C Web Push active. Reminders are securely scheduled background-pushed.";
     statusHelp.style.color = "#48c774";
-    scheduleReminderLoop();
   } else {
     toggleBtn.textContent = "Disabled ❌";
     toggleBtn.className = "button is-dark is-fullwidth touch-btn";
     selectMenu.setAttribute("disabled", "true");
-    statusHelp.textContent = "Reminders disabled. Toggle On to authorize and schedule reminders.";
+    statusHelp.textContent = "Reminders disabled. Toggle On to subscribe and receive background push reminders.";
     statusHelp.style.color = "#7b8084";
-    clearReminderLoop();
   }
 }
 
 async function toggleNotifications() {
   const isCurrentlyEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
+  const toggleBtn = document.getElementById("notificationToggleBtn");
 
-  if (isCurrentlyEnabled) {
-    // Disable reminders
-    localStorage.setItem("reminder_notifications_enabled", "false");
-    setNotificationsActive(false);
-    showFlash("Telemetry reminders disabled", "success");
-  } else {
-    // Check Notifications availability
-    if (!("Notification" in window)) {
-      showFlash("Error: Your browser does not support standard Notifications API", "error");
-      return;
-    }
+  toggleBtn.setAttribute("disabled", "true");
 
-    // Request permissions (FR-003)
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      localStorage.setItem("reminder_notifications_enabled", "true");
-      setNotificationsActive(true);
-      showFlash("Successfully subscribed to telemetry reminders!", "success");
-      // Trigger a sample instant welcome notification
-      new Notification("EMF Camper Reminders Active ⛺", {
-        body: `Welcome, ${USER_NAMES[activeUser] || "Camper"}! You will receive periodic reminders to log your stats.`,
-        icon: "favicon.svg"
-      });
-    } else {
+  try {
+    if (isCurrentlyEnabled) {
+      // Unsubscribe from PushManager (FR-001)
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+      }
+      
+      // Notify backend to remove the push subscription
+      await syncPushSubscriptionWithBackend(null);
+
       localStorage.setItem("reminder_notifications_enabled", "false");
       setNotificationsActive(false);
-      showFlash("Notification permission denied or blocked by browser", "error");
+      showFlash("Successfully unsubscribed from telemetry reminders", "success");
+    } else {
+      // Check secure contexts and permission levels
+      if (!("Notification" in window)) {
+        showFlash("Error: Your browser does not support standard Notifications API", "error");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const reg = await navigator.serviceWorker.ready;
+        const pubKey = window.EMF_CONFIG ? window.EMF_CONFIG.vapid_public_key : "";
+        
+        if (!pubKey) {
+          throw new Error("VAPID public key is unconfigured on frontend config.");
+        }
+
+        // Subscribe using native PushManager (FR-002)
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(pubKey)
+        });
+
+        // Sync subscription with backend
+        await syncPushSubscriptionWithBackend(sub);
+
+        localStorage.setItem("reminder_notifications_enabled", "true");
+        setNotificationsActive(true);
+        showFlash("Successfully subscribed to background push reminders!", "success");
+      } else {
+        localStorage.setItem("reminder_notifications_enabled", "false");
+        setNotificationsActive(false);
+        showFlash("Notification permission denied or blocked by browser settings", "error");
+      }
     }
+  } catch (err) {
+    console.error("[PushManager] Subscription Error:", err);
+    showFlash("Error: PushManager registration failed. Check console.", "error");
+    setNotificationsActive(false);
+  } finally {
+    toggleBtn.removeAttribute("disabled");
   }
 }
 
-function changeNotificationInterval() {
+async function changeNotificationInterval() {
   const selectMenu = document.getElementById("notificationIntervalSelect");
   if (!selectMenu) return;
 
@@ -342,50 +396,46 @@ function changeNotificationInterval() {
   localStorage.setItem("reminder_notifications_interval", intervalVal);
   showFlash(`Reminder interval updated to ${selectMenu.options[selectMenu.selectedIndex].text}`, "success");
 
-  // Re-schedule the loop with the new interval (FR-007)
-  scheduleReminderLoop();
-}
-
-function scheduleReminderLoop() {
-  clearReminderLoop();
-
-  const isEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
-  if (!isEnabled || Notification.permission !== "granted") return;
-
-  const intervalMinutes = parseInt(localStorage.getItem("reminder_notifications_interval") || "60", 10);
-  const intervalMs = intervalMinutes * 60 * 1000;
-
-  console.log(`[SCHEDULER] Scheduling reminders every ${intervalMinutes} minutes (${intervalMs}ms)`);
-
-  reminderIntervalTimer = setInterval(() => {
-    triggerReminderNotification();
-  }, intervalMs);
-}
-
-function clearReminderLoop() {
-  if (reminderIntervalTimer) {
-    console.log("[SCHEDULER] Clearing previous reminder background timer");
-    clearInterval(reminderIntervalTimer);
-    reminderIntervalTimer = null;
+  // Re-sync with backend to update the polling interval (FR-003)
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await syncPushSubscriptionWithBackend(sub);
+    }
+  } catch (err) {
+    console.error("[PushManager] Sync Error on interval change:", err);
   }
 }
 
-function triggerReminderNotification() {
-  if (Notification.permission !== "granted") return;
+async function syncPushSubscriptionWithBackend(subscription) {
+  if (!TRACKER_KEY) return;
 
-  const displayName = USER_NAMES[activeUser] || "Camper";
-  const notification = new Notification("EMF Camper Reminder ⛺", {
-    body: `Hey ${displayName}! Remember to log your active steps, status, and beverage count on your Logging Portal.`,
-    icon: "favicon.svg",
-    requireInteraction: true
-  });
-
-  // Tap/click window refocus interaction (FR-005 / US3)
-  notification.onclick = function(event) {
-    event.preventDefault();
-    window.focus();
-    this.close();
+  const intervalVal = document.getElementById("notificationIntervalSelect").value;
+  const payload = {
+    user_id: activeUser,
+    subscription: subscription ? subscription.toJSON() : null,
+    interval_minutes: parseInt(intervalVal, 10)
   };
 
-  localStorage.setItem("reminder_notifications_last_fired", new Date().toISOString());
+  try {
+    const response = await fetch(`${API_BASE}/push-subscribe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": TRACKER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || "Failed to sync push credentials with backend.");
+    }
+    console.log("[PushManager] Synchronized subscription successfully with serverless backend.");
+  } catch (err) {
+    console.error("[PushManager] Backend Sync Failed:", err);
+    showFlash("Sync Error: Failed to synchronize push credentials with backend.", "error");
+    throw err;
+  }
 }

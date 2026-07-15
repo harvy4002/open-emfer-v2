@@ -11,8 +11,10 @@ import json
 import urllib.parse
 import decimal
 import uuid
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
+from pywebpush import webpush, WebPushException
 
 def make_event_sort_key(timestamp=None):
     """Generates a lexicographically sortable event sort key: event#<iso8601>#<short_uuid_hash>."""
@@ -347,6 +349,112 @@ def update_camper_steps_and_leaderboard(user_id, steps):
     combined_totals["steps_leaderboard"] = sorted(steps_leaderboard, key=lambda x: int(x.get("all_time_steps", 0)), reverse=True)
     db_put_item(combined_key, "totals", combined_totals)
 
+# Thread global handle (US2)
+scheduler_thread = None
+
+def start_push_scheduler():
+    """Starts the background Web Push scheduler daemon thread."""
+    global scheduler_thread
+    if scheduler_thread is None:
+        scheduler_thread = threading.Thread(target=push_scheduler_loop, daemon=True)
+        scheduler_thread.start()
+        print(">> Web Push Scheduler Daemon Thread started successfully.")
+
+def push_scheduler_loop():
+    """Recurring interval loop checking and dispatching push reminders every 10 seconds."""
+    # Ensure VAPID keys exist
+    vapid_private_path = os.path.join(os.path.dirname(__file__), "private_key.pem")
+    if not os.path.exists(vapid_private_path):
+        print(f"[SCHEDULER WARNING] VAPID private key is missing at {vapid_private_path}. Bypassing scheduling loop.")
+        return
+        
+    print("[SCHEDULER] Background Web Push scheduler active.")
+    
+    while True:
+        try:
+            # We iterate over our registered user ids
+            campers_list = ["hvy", "cha", "ash", "tin"]
+            for user_id in campers_list:
+                user_key = f"camper#aggregates#{user_id}"
+                user_totals = db_get_item(user_key, "totals")
+                if not user_totals:
+                    continue
+                    
+                sub = user_totals.get("push_subscription")
+                interval_minutes = int(user_totals.get("push_interval_minutes") or 0)
+                
+                # Check if subscription exists and is active (FR-004)
+                if sub and interval_minutes > 0:
+                    last_notified_str = user_totals.get("push_last_notified_time")
+                    if not last_notified_str:
+                        # Initialize last_notified if missing
+                        user_totals["push_last_notified_time"] = datetime.utcnow().isoformat() + "Z"
+                        db_put_item(user_key, "totals", user_totals)
+                        continue
+                        
+                    # Calculate duration since last notified
+                    try:
+                        last_notified = datetime.fromisoformat(last_notified_str.replace("Z", ""))
+                        now = datetime.utcnow()
+                        delta_minutes = (now - last_notified).total_seconds() / 60.0
+                    except Exception as parse_err:
+                        print(f"[SCHEDULER parse error]: {parse_err}")
+                        delta_minutes = 0
+                        
+                    if delta_minutes >= interval_minutes:
+                        print(f"[SCHEDULER] Interval of {interval_minutes}m lapsed for {user_id}. Sending push reminder...")
+                        success = send_web_push(user_id, sub)
+                        if success:
+                            # Update notification timestamp
+                            user_totals["push_last_notified_time"] = datetime.utcnow().isoformat() + "Z"
+                            db_put_item(user_key, "totals", user_totals)
+                            
+        except Exception as loop_err:
+            print(f"[SCHEDULER LOOP ERROR]: {loop_err}")
+            
+        time.sleep(10) # check every 10 seconds (optimized for responsive 1-minute test options)
+
+def send_web_push(user_id, subscription_info):
+    """Encrypts and dispatches standard W3C push payload using pywebpush."""
+    private_key_path = os.path.join(os.path.dirname(__file__), "private_key.pem")
+    
+    display_name = USER_NAMES.get(user_id, "Camper")
+    payload_data = {
+        "title": "EMF Camper Reminder ⛺",
+        "options": {
+            "body": f"Hey {display_name}! Remember to log your active steps, status, and beverage count on your Logging Portal.",
+            "icon": "favicon.svg",
+            "requireInteraction": True,
+            "data": {
+                "url": f"/admin.html?u={user_id}"
+            }
+        }
+    }
+    
+    try:
+        webpush(
+            subscription_info=subscription_info,
+            data=json.dumps(payload_data),
+            vapid_private_key=private_key_path,
+            vapid_claims={"sub": "mailto:harvinder@harvinderatwal.com"}
+        )
+        print(f"[PUSH SUCCESS] Successfully dispatched push reminder to {user_id}")
+        return True
+    except WebPushException as ex:
+        print(f"[PUSH ERROR] Failed to send push to {user_id}: {ex}")
+        # Pruning boundary: if subscription has expired/gone, remove it cleanly (FR-004 boundary)
+        if ex.response is not None and ex.response.status_code == 410:
+            print(f"[PUSH PRUNE] Subscription expired (410) for {user_id}. Deleting...")
+            user_key = f"camper#aggregates#{user_id}"
+            user_totals = db_get_item(user_key, "totals")
+            if user_totals:
+                user_totals["push_subscription"] = None
+                db_put_item(user_key, "totals", user_totals)
+        return False
+    except Exception as ex:
+        print(f"[PUSH UNEXPECTED ERROR]: {ex}")
+        return False
+
 # --- Unified REST Core Routing Logic ---
 
 def process_api_get(path, query_params):
@@ -494,7 +602,7 @@ def process_api_post(path, payload, auth_header):
     expected_key = USER_KEYS.get(user_id, "mock-super-secret-key")
     
     # Token authorization check (Principle V)
-    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps"] and auth_header != expected_key:
+    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps", "/push-subscribe"] and auth_header != expected_key:
         return 401, headers, json_dumps({
             "error": "Unauthorized",
             "message": "Invalid or missing tracker key"
@@ -770,6 +878,36 @@ def process_api_post(path, payload, auth_header):
             "cumulative_steps": steps
         })
         
+    elif path == "/push-subscribe":
+        user_id = payload.get("user_id") or "hvy"
+        sub_data = payload.get("subscription") # can be null if unsubscribing
+        interval_minutes = int(payload.get("interval_minutes") or 60)
+        
+        user_key = f"camper#aggregates#{user_id}"
+        user_totals = db_get_item(user_key, "totals") or {
+            "user_id": user_id,
+            "total_drinks": 0,
+            "beer_drinks": 0,
+            "categories": {},
+            "all_time_total_drinks": 0,
+            "all_time_cumulative_steps": 0,
+            "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
+        }
+        
+        # Save subscription metadata (FR-003)
+        user_totals["push_subscription"] = sub_data
+        user_totals["push_interval_minutes"] = interval_minutes
+        user_totals["push_last_notified_time"] = datetime.utcnow().isoformat() + "Z"
+        
+        db_put_item(user_key, "totals", user_totals)
+        
+        return 201, headers, json_dumps({
+            "status": "success",
+            "user_id": user_id,
+            "subscription_active": sub_data is not None,
+            "interval_minutes": interval_minutes
+        })
+        
     return 404, headers, "Not Found"
 
 # --- AWS Lambda Handler Entrypoint ---
@@ -910,6 +1048,10 @@ class SimAPIHandler(BaseHTTPRequestHandler):
 
 def run_local_server(server_class=HTTPServer, handler_class=SimAPIHandler, port=PORT):
     load_local_db()
+    
+    # Start Web Push Scheduler Daemon Thread (T011)
+    start_push_scheduler()
+    
     server_address = ("", port)
     httpd = server_class(server_address, handler_class)
     print(f">> Local API Simulator running on http://localhost:{port}")

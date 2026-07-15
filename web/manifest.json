@@ -1,0 +1,17 @@
+{
+  "name": "Open EMF Camper Telemetry Portal",
+  "short_name": "EMF Camper",
+  "start_url": "/admin.html",
+  "display": "standalone",
+  "background_color": "#161719",
+  "theme_color": "#ff780a",
+  "description": "Administrative logging panel and real-time telemetry dashboard for EMF Camp.",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

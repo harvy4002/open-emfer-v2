@@ -1,34 +1,37 @@
-# Implementation Plan: Browser Notifications Scheduler
+# Implementation Plan: Web Push Notification Scheduler
 
 **Branch**: `017-browser-notifications-scheduler` | **Date**: Wednesday, July 15, 2026 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/017-browser-notifications-scheduler/spec.md`
 
 ## Summary
+The previous localized browser notification scheduler (`setInterval`) relies on the browser remaining active or running in the foreground. Mobile operating systems (iOS and Android) aggressively suspend background JavaScript tabs, meaning interval-based reminders fail to fire if the participant closes the browser or locks their phone for extended periods. To ensure robust reminder delivery, we are upgrading the system to use W3C Web Push Notifications via Service Workers.
 
-This feature designs and implements standard browser-native reminder notifications inside the participant's manual admin logging portal (`web/admin.html` and `web/js/admin.js`). 
-
-The system utilizes the browser W3C Notifications API to request permissions, schedules recurring reminder prompts using standard lightweight `setInterval` timers, and provides an active window refocus action on user click. Preferences are fully preserved on reloads using local `localStorage` keys, ensuring a seamless, zero-cost serverless experience.
+## Scope & Impact
+This transition from a purely client-side scheduler to a server-assisted push architecture will impact:
+- **Frontend**: Introduction of a Service Worker (`sw.js`) and a Web App Manifest (`manifest.json`) to handle background pushes and enable PWA push capabilities on iOS. Modifications to `admin.js` to use `PushManager`.
+- **Backend**: Modifications to `sim_server.py` to securely store push subscriptions and intervals, and the introduction of a background thread to schedule and dispatch encrypted payload events.
+- **Dependencies**: Addition of the `pywebpush` library to sign and encrypt payloads according to the W3C Web Push protocol.
 
 ---
 
 ## Technical Context
 
-**Language/Version**: Vanilla Client Browser ECMAScript 6 JavaScript & HTML5 / CSS3 (Bulma CSS v1.0.0)
+**Language/Version**: Python 3.12 (AWS Lambda / simulation server) & Client Browser ECMAScript 6 JavaScript
 
-**Primary Dependencies**: None (Standard browser-native Notification API and Bulma styles), keeping the front-end extremely lightweight and dependency-free
+**Primary Dependencies**: `pywebpush` (Python Web Push payload signing & encryption library), standard browser W3C Service Worker & Push APIs, Bulma CSS v1.0.0
 
-**Storage**: Browser `localStorage` (client-side persistence), requiring **zero** server-side database table changes
+**Storage**: AWS DynamoDB composite aggregate partitions or local JSON file `web/web_local_db.json`. Stores the `subscription` JSON payload and interval counters.
 
-**Testing**: Web browser standalone console checks and native notification testing routines
+**Testing**: Pytest automated backend unit tests and local mobile/desktop Service Worker integration checks.
 
-**Target Platform**: Any modern HTML5/W3C compliant browser served over a secure context (HTTPS / localhost)
+**Target Platform**: AWS Lambda, S3 Static Bucket, CloudFront CDN; or standard localhost simulator loop.
 
-**Project Type**: Standalone Static Frontend Integration
+**Project Type**: Serverless Web Application (Frontend static assets + Serverless API Backend)
 
-**Performance Goals**: Permissions requested and scheduled instantly under 50ms; sub-100ms click refocus reaction times
+**Performance Goals**: Push subscription registrations verified and saved under 100ms; push payloads signed, encrypted, and dispatched within 60 seconds of interval boundaries.
 
-**Constraints**: Absolute 0 server/database running costs, fully matching Principle VII; robust background loop management to tear down timers cleanly when toggled off
+**Constraints**: Strict compliance with browser HTTPS/secure context constraints; robust event loop structures in Python to check notifications without server degradation.
 
 ---
 
@@ -37,35 +40,38 @@ The system utilizes the browser W3C Notifications API to request permissions, sc
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 - **Principle I (Contract-First)**: **PASS**. Fully specified in `spec.md` and caching variables configured in `data-model.md`.
-- **Principle II (Serverless Simplicity)**: **PASS**. No serverless Python dependencies, Lambda cold starts, or additional AWS services are introduced.
-- **Principle IV (Database Modeling)**: **PASS**. Operates 100% client-side, requiring zero database modifications.
-- **Principle VII (Cost-Optimized Static Frontend)**: **PASS**. Designed strictly as standard browser Fetch/API interactions with $0 runtime hosting costs.
-- **Principle VIII (Fast Feedback Loop)**: **PASS**. Instantly runnable and testable locally on port 3000 using the python simulation server.
+- **Principle II (Serverless Simplicity)**: **PASS**. Built natively inside `sim_server.py` Lambda script with a single lightweight python library dependency `pywebpush`.
+- **Principle IV (Database Modeling)**: **PASS**. Reuses the single-table composite keys in `camper#aggregates#<user_id>` totals to store subscriptions, preventing redundant tables.
+- **Principle V (Zero-Trust Security)**: **PASS**. The subscription endpoint checks the secure, participant-specific `Authorization` header.
+- **Principle VII (Cost-Optimized Static Frontend)**: **PASS**. Static files (manifest, sw.js, admin.js) reside in the static directory, costing $0 to host on CDN.
+- **Principle VIII (Fast Feedback Loop)**: **PASS**. Local simulation server runs a background thread to send real, decrypted push notifications to Chrome/Safari on localhost in sub-second test boundaries.
 
 ---
 
 ## Project Structure
 
-### Documentation (this feature)
+### Documentation
 
 ```text
 specs/017-browser-notifications-scheduler/
 ├── spec.md              # Functional specification and user scenarios
 ├── plan.md              # Implementation plan (this file)
 ├── research.md          # Architectural research and decision record
-├── data-model.md        # Extended client-side storage blueprints
+├── data-model.md        # Extended storage schemas (localStorage keys)
 ├── quickstart.md        # Step-by-step validation guide
 └── checklists/
     └── requirements.md  # Quality validation checklist
 ```
 
-### Source Code (repository root)
+### Source Code
 
 ```text
 web/
-├── admin.html           # Add Bulma card and toggle switch for notification reminder preferences
+├── admin.html           # Add manifest link inside the head section
+├── manifest.json        # Create Web App Manifest enabling mobile PWA capabilities
+├── sw.js                # Create Service Worker handling push and notification clicks
 └── js/
-    └── admin.js         # Register switch listeners, Notification API bindings, and background timers
+    └── admin.js         # Register SW, PushManager subscribe, and POST push subscriptions
 ```
 
 **Structure Decision**: Web application option.
