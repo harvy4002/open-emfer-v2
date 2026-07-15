@@ -38,6 +38,9 @@ if (hasUserParam && !USER_NAMES[activeUser]) {
 // Mood image mapping (Deprecate STATUS_IMAGES in favor of 009-camper-profile-status dynamic folder mappings)
 
 function initUI() {
+  // Initialize Google Analytics tracking (US1 / US2 / US3)
+  initGoogleAnalytics();
+
   const introEl = document.getElementById("intro-landing-view");
   const dashEl = document.getElementById("dashboard-view");
 
@@ -675,6 +678,35 @@ document.addEventListener("visibilitychange", () => {
     }
   }
 });
+
+// Dynamic Google Analytics 4 (GA4) Tracking Compiler & Injector (FR-002 / FR-003 / FR-004)
+function initGoogleAnalytics() {
+  const config = window.EMF_CONFIG || {};
+  const gaId = config.google_analytics_id;
+
+  // Graceful opt-out and unconfigured placeholder gates (FR-004)
+  if (!gaId || gaId === "G-XXXXXXXXXX" || !gaId.startsWith("G-")) {
+    console.log("[ANALYTICS] Google Analytics Measurement ID is unconfigured or blank. Bypassing injection.");
+    return;
+  }
+
+  console.log(`[ANALYTICS] Configured Measurement ID [${gaId}] detected. Compiling and injecting standard gtag.js site tags.`);
+
+  // 1. Create and inject external gtag.js script node
+  const externalScript = document.createElement("script");
+  externalScript.async = true;
+  externalScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+  document.head.appendChild(externalScript);
+
+  // 2. Initialize global dataLayer and gtag configurations
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function() {
+    window.dataLayer.push(arguments);
+  };
+  
+  window.gtag('js', new Date());
+  window.gtag('config', gaId);
+}
 
 // App Start
 initUI();
