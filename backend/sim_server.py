@@ -50,11 +50,11 @@ DB_FILE = os.path.join(os.path.dirname(__file__), "..", "web", "web_local_db.jso
 
 # Participant tracker keys mapping (Constitution Principle V multi-tenant lock)
 USER_KEYS = {
-    "hvy": "mock-super-secret-key",
-    "cha": "cha-mock-secret-key",
-    "ash": "ash-mock-secret-key",
-    "tin": "tin-mock-secret-key",
-    "combined": "mock-super-secret-key"
+    "hvy": "hvy_k_8f2d9a3b6c7e4f01a8b2c3d4e5f6a7b8",
+    "cha": "cha_k_1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "ash": "ash_k_9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c",
+    "tin": "tin_k_3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f",
+    "combined": "combined_k_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
 }
 
 # AWS Environment detection

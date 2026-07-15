@@ -14,7 +14,7 @@ resource "aws_secretsmanager_secret" "secrets" {
 resource "aws_secretsmanager_secret_version" "secret_template" {
   secret_id = aws_secretsmanager_secret.secrets.id
   secret_string = jsonencode({
-    tracker_key         = "mock-super-secret-key"
+    tracker_key         = "hvy_k_8f2d9a3b6c7e4f01a8b2c3d4e5f6a7b8"
     monzo_client_id     = "oauth-client-id-here"
     monzo_client_secret = "oauth-client-secret-here"
   })
