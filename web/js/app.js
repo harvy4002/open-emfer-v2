@@ -199,8 +199,7 @@ async function fetchTelemetry() {
 
       // Resolve status photo file path dynamically using keyword matching (009/011 alignment)
       const resolvedFileKeyword = resolveStatusImage(statusText);
-      const dynamicImage = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
-      document.getElementById("camper-status-image").setAttribute("src", dynamicImage);
+      loadStatusImage(resolvedFileKeyword);
     }
 
     // 4. Fetch Monzo expenses
@@ -502,6 +501,32 @@ function resolveStatusImage(statusText) {
   }
   
   return "normal";
+}
+
+// Load status image by checking for .jpg first, then falling back to .png, and finally to normal.jpg
+function loadStatusImage(resolvedFileKeyword) {
+  const imgEl = document.getElementById("camper-status-image");
+  if (!imgEl) return;
+
+  const jpgSrc = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
+  const pngSrc = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.png`;
+  const fallbackSrc = `${activeUser}_status/${activeUser}_normal.jpg`;
+
+  imgEl.onerror = function() {
+    // If the .jpg version failed (and it's not the normal/fallback image), try the .png version
+    if (this.src.endsWith(".jpg") && this.src.indexOf("_normal.jpg") === -1) {
+      this.src = pngSrc;
+    } else if (this.src.endsWith(".png")) {
+      // If the .png version also failed, fall back to the normal status image (.jpg)
+      this.src = fallbackSrc;
+    } else {
+      // Prevent infinite loops if fallback fails
+      this.onerror = null;
+      this.src = "hvy_status/hvy_normal.jpg";
+    }
+  };
+
+  imgEl.src = jpgSrc;
 }
 
 // Jittered Polling Execution with Page Visibility throttling
