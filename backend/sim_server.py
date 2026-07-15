@@ -14,7 +14,6 @@ import uuid
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
-from pywebpush import webpush, WebPushException
 
 def make_event_sort_key(timestamp=None):
     """Generates a lexicographically sortable event sort key: event#<iso8601>#<short_uuid_hash>."""
@@ -416,6 +415,12 @@ def push_scheduler_loop():
 
 def send_web_push(user_id, subscription_info):
     """Encrypts and dispatches standard W3C push payload using pywebpush."""
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        print("[PUSH SCHEDULER ERROR] Failed to import 'pywebpush' inside Lambda runtime context.")
+        return False
+
     private_key_path = os.path.join(os.path.dirname(__file__), "private_key.pem")
     
     display_name = USER_NAMES.get(user_id, "Camper")
