@@ -63,14 +63,29 @@ function initUI() {
     // Show environmental panels and maps overlay for Harvy ONLY (FR-010 / FR-012)
     document.querySelectorAll(".env-panel").forEach(el => el.classList.remove("hidden"));
     document.getElementById("leaderboard-panel").classList.add("hidden");
+    
+    // Show individual panels
+    document.getElementById("camper-activity-panel").classList.remove("hidden");
+    document.getElementById("steps-panel").classList.remove("hidden");
+    document.getElementById("monzo-panel").classList.remove("hidden");
     initCharts();
   } else if (activeUser === "combined") {
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
     document.getElementById("leaderboard-panel").classList.remove("hidden");
+    
+    // Hide individual panels on combined view (US-combined UX requirements)
+    document.getElementById("camper-activity-panel").classList.add("hidden");
+    document.getElementById("steps-panel").classList.add("hidden");
+    document.getElementById("monzo-panel").classList.add("hidden");
   } else {
     // Hide environmental panels and map overlay for other individual participants (cha, ash, tin)
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
     document.getElementById("leaderboard-panel").classList.add("hidden");
+    
+    // Show individual panels
+    document.getElementById("camper-activity-panel").classList.remove("hidden");
+    document.getElementById("steps-panel").classList.remove("hidden");
+    document.getElementById("monzo-panel").classList.remove("hidden");
   }
   
   syncNavUI();
@@ -172,48 +187,50 @@ async function fetchTelemetry() {
       updateStepsLeaderboard(data.steps_leaderboard || []);
     }
 
-    // 2. Fetch history (steps & temperature & GPS location history map)
-    const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}&_=${Date.now()}`);
-    if (resHistory.ok) {
-      const historyData = await resHistory.json();
-      document.getElementById("stepsVal").textContent = Number(historyData.cumulative_steps || 0).toLocaleString();
-      document.getElementById("distVal").textContent = `Distance: ${Number(historyData.cumulative_distance_km || 0).toFixed(2)} km`;
+    if (activeUser !== "combined") {
+      // 2. Fetch history (steps & temperature & GPS location history map)
+      const resHistory = await fetch(`${API_BASE}/history?user_id=${activeUser}&_=${Date.now()}`);
+      if (resHistory.ok) {
+        const historyData = await resHistory.json();
+        document.getElementById("stepsVal").textContent = Number(historyData.cumulative_steps || 0).toLocaleString();
+        document.getElementById("distVal").textContent = `Distance: ${Number(historyData.cumulative_distance_km || 0).toFixed(2)} km`;
 
-      const locationHistory = historyData.location_history || [];
+        const locationHistory = historyData.location_history || [];
 
-      if (activeUser === "hvy") {
-        // Extract temperature readings from coordinates history
-        const tempHistory = locationHistory.slice(-6).map(pt => ({
-          temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
-          time: pt.time
-        }));
-        const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
-        
-        updateCharts(tempHistory, noiseHistory);
-        drawLocationTrail(locationHistory);
-      }
-    }
-
-    // 3. Fetch status text (StatusLatestResponse)
-    const resStatus = await fetch(`${API_BASE}/beer?event=status&type=latest&user_id=${activeUser}&_=${Date.now()}`);
-    if (resStatus.ok) {
-      const statusData = await resStatus.json();
-      const statusText = statusData.status || "Chilling";
-      const badgeEl = document.getElementById("camper-status-badge");
-      if (badgeEl) {
-        badgeEl.textContent = statusText;
+        if (activeUser === "hvy") {
+          // Extract temperature readings from coordinates history
+          const tempHistory = locationHistory.slice(-6).map(pt => ({
+            temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
+            time: pt.time
+          }));
+          const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
+          
+          updateCharts(tempHistory, noiseHistory);
+          drawLocationTrail(locationHistory);
+        }
       }
 
-      // Resolve status photo file path dynamically using keyword matching (009/011 alignment)
-      const resolvedFileKeyword = resolveStatusImage(statusText);
-      loadStatusImage(resolvedFileKeyword);
-    }
+      // 3. Fetch status text (StatusLatestResponse)
+      const resStatus = await fetch(`${API_BASE}/beer?event=status&type=latest&user_id=${activeUser}&_=${Date.now()}`);
+      if (resStatus.ok) {
+        const statusData = await resStatus.json();
+        const statusText = statusData.status || "Chilling";
+        const badgeEl = document.getElementById("camper-status-badge");
+        if (badgeEl) {
+          badgeEl.textContent = statusText;
+        }
 
-    // 4. Fetch Monzo expenses
-    const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}&_=${Date.now()}`);
-    if (resExpenses.ok) {
-      const expenseData = await resExpenses.json();
-      document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;
+        // Resolve status photo file path dynamically using keyword matching (009/011 alignment)
+        const resolvedFileKeyword = resolveStatusImage(statusText);
+        loadStatusImage(resolvedFileKeyword);
+      }
+
+      // 4. Fetch Monzo expenses
+      const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}&_=${Date.now()}`);
+      if (resExpenses.ok) {
+        const expenseData = await resExpenses.json();
+        document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;
+      }
     }
 
     // Success styling
