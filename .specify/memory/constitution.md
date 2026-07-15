@@ -1,14 +1,11 @@
 <!--
 ### Sync Impact Report
-- Version change: 1.1.0 → 1.2.0
-- List of modified principles: None renamed, added Principle VIII
-- Added sections:
-  - Principle VIII: Fast Feedback Cycles (Local Simulation & Manual API Triggering)
-- Removed sections: None
-- Templates requiring updates:
-  - .specify/templates/constitution-template.md (✅ updated/aligned)
-  - .specify/templates/plan-template.md (✅ updated/aligned)
-  - .specify/templates/tasks-template.md (✅ updated/aligned)
+- Version change: 1.2.0 → 1.3.0
+- List of modified principles:
+  - Principle VI: Automated Testing and Mocking (Expanded to forbid silent exception swallowing in local/development runs)
+  - Principle VIII: Fast Feedback Cycles (Expanded to mandate real-time CloudWatch log tailing CLI commands)
+- Added sections: None
+- Templates requiring updates: None
 - Follow-up TODOs: None
 -->
 # Open EMF Camper Constitution
@@ -37,8 +34,10 @@ Sensitive credentials, tokens, or API keys (such as Monzo OAuth credentials or d
 - Private third-party secrets must reside exclusively in AWS Secrets Manager and be loaded dynamically at runtime.
 - Telemetry mutative operations (POST) must strictly authenticate incoming traffic against a secure header-based token (`tracker_key`).
 
-### VI. Automated Testing and Mocking
-All Lambda handlers and logic branches MUST be covered by unit tests (using `pytest` or `unittest`) prior to merging. Third-party APIs, AWS DynamoDB, and Secrets Manager services must be fully mocked (using libraries like `moto` or standard Python mock decorators) to verify functionality offline.
+### VI. Automated Testing and Mocking (No Silent Failures)
+All Lambda handlers and logic branches MUST be covered by unit tests (using `pytest` or `unittest`) prior to merging.
+- Third-party APIs, AWS DynamoDB, and Secrets Manager services must be fully mocked (using libraries like `moto` or standard Python mock decorators) to verify functionality offline.
+- **No Silent Exception Swallowing**: Exceptions in the backend or simulation handlers MUST NEVER be caught and swallowed silently without proper logging or error propagation. In local/development testing runs, Exceptions MUST be actively raised (rather than returning default empty states like `[]` or `"normal"`) to force fast failures and detect configuration or SDK mismatches immediately.
 
 ### VII. Cost-Optimized Serverless Frontends (S3 & CloudFront Static Sites)
 To keep hosting costs near zero and maximize load performance on mobile networks, both the public telemetry dashboard and the participant manual logging/admin views MUST be developed as highly responsive, lightweight, mobile-first static web applications.
@@ -47,10 +46,11 @@ To keep hosting costs near zero and maximize load performance on mobile networks
 - Dynamic data interactions, live charts, and administrative manual logging forms MUST query the serverless AWS API Gateway / Lambda backend via browser-native fetch calls.
 - Enforce secure token authentication (`tracker_key`) on all client-initiated mutative API requests.
 
-### VIII. Fast Feedback Cycles (Local Simulation & Manual API Triggering)
+### VIII. Fast Feedback Cycles (Local Simulation & Production Observability)
 The codebase and design configurations MUST facilitate an ultra-fast developer feedback loop, allowing developers and automated agents to run, test, and debug both frontend static interfaces and backend API endpoints locally without relying on live AWS cloud deployments.
 - **Local API Simulation**: Both backend Lambdas and API Gateway route behaviors must be runnable locally (e.g., using lightweight offline emulation or simple python/go dev servers), enabling manual payload submits and state lookups.
 - **Manual Data Flow Triggering**: Maintain explicit, runnable testing shell scripts (such as custom cURL triggers) and local browser configuration states that can manually inject mock payloads into ingestion endpoints, allowing instant verification of end-to-end data flows locally.
+- **Real-Time Production Observability (Log Tailing)**: Developers and testing agents MUST maintain clean CLI commands to tail live CloudWatch Logs streams in real-time (using standard `aws logs tail` utility calls with specified custom profiles like `--profile open-emfer`). This ensures any server-side syntax errors, attribute crashes (such as `AttributeError` SDK mismatches), or permission blocks can be diagnosed instantly as they occur during production verification checks.
 - **Rationale**: Mitigates downstream integration flaws, drastically decreases developer validation cycle times from minutes/hours of Terraform provisioning to sub-second local iterations, and ensures high operational readiness before production pushes.
 
 ---
@@ -81,4 +81,4 @@ The codebase and design configurations MUST facilitate an ultra-fast developer f
 
 This Constitution supersedes all standard development ad-hoc patterns. Any changes to core principles, tech stacks, or architectural rules require documentation, ratification by the project owner, and updating this file.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-10
+**Version**: 1.3.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-14
