@@ -59,6 +59,21 @@ As a camp participant (Charlotte, Ash, Tina), I want my dashboard to support cus
 
 ---
 
+### User Story 3 - Camper Status Text Display Label (Priority: P3)
+
+As a public dashboard viewer, I want to see the name of the active camper status rendered in clean, readable text directly underneath their visual profile photo, so that I can immediately read what they are doing in real time.
+
+**Why this priority**: Enhances visual tracking by providing linguistic clarity to the status image cards.
+
+**Independent Test**: Log into the admin portal, set the status to "Sleeping", and open Harvy's dashboard. Verify that underneath the sleeping photo, a centered text label "Sleeping" is visible.
+
+**Acceptance Scenarios**:
+
+1. **Given** Harvy's active status is "Eating" in the database, **When** the dashboard loads, **Then** the image displays `harvy_eating.jpg` and a text label reading `"Eating"` is rendered directly underneath it.
+2. **Given** Charlotte's active status is "Coding", **When** Charlotte's dashboard loads, **Then** the image displays `cha_workshop.jpg` and a text label reading `"Coding"` is displayed.
+
+---
+
 ### Edge Cases
 
 - **Missing Status Photo**: If Harvy transitions to a status that has no corresponding photo in the `/harvy_status/` directory (e.g., `harvy_active.jpg`), the dashboard must fall back to a default `harvy_normal.jpg` or fallback avatar without breaking the layout.
@@ -76,6 +91,7 @@ As a camp participant (Charlotte, Ash, Tina), I want my dashboard to support cus
 - **FR-004 (Visual Profile Container)**: The public dashboard MUST render the status photo inside a prominent profile box (resembling a high-contrast profile picture) that maintains proper visual alignment on both mobile and desktop screens.
 - **FR-005 (Responsive Sizing)**: The visual profile picture container MUST automatically scale responsively up to standard bounds (e.g., max-width 300px), maintaining aspect ratio and preventing layout shifts or horizontal scrolls on narrow screens.
 - **FR-006 (File Format Standardization)**: The status photo file resolver MUST check for files in the standard JPG/JPEG (`.jpg`) format only.
+- **FR-007 (Status Text Display Label)**: The public dashboard MUST render a centered, readable text label directly underneath the Camper Activity status image, displaying the exact capitalized name of the active camper status (e.g. "Chilling" or "Sleeping").
 
 ### Key Entities *(include if feature involves data)*
 

@@ -31,4 +31,5 @@
 
 ## Notes
 
-- Specification validated and verified complete on 2026-07-13. Ready for planning.
+- Specification validated and verified complete on 2026-07-13.
+- Updated on 2026-07-14 to incorporate User Story 3 and FR-007 (centered status text display underneath the status image). Ready for planning.
