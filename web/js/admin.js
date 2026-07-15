@@ -33,6 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("camperNameHeader").textContent = `${displayName}'s Logging Portal`;
   document.getElementById("camperSubHeader").textContent = `Locked context: ${activeUser.toUpperCase()}`;
 
+  // Dynamically configure the link back to the user's public telemetry dashboard
+  const publicLink = document.getElementById("publicDashboardLink");
+  if (publicLink) {
+    publicLink.href = `index.html?u=${activeUser}`;
+  }
+
   // Initialize Tracker Key input UI
   if (TRACKER_KEY) {
     document.getElementById("trackerKeyInput").value = TRACKER_KEY;
