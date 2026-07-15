@@ -201,10 +201,16 @@
 
         <!-- Camper Active Status and image (FR-007) -->
         <div class="column is-6-mobile is-4-tablet is-3-desktop">
-          <div class="metric-card">
-            <div class="metric-title">Camper Activity</div>
-            <div class="mt-2" style="max-height: 250px; overflow: hidden; border-radius: 4px; display: flex; align-items: center; justify-content: center; background-color: #1a1c1e;">
-              <img id="camper-status-image" src="hvy_status/hvy_normal.jpg" onerror="if (this.src.indexOf('_normal.jpg') !== -1) { this.onerror=null; this.src='hvy_status/hvy_normal.jpg'; } else { this.src='' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg'; }" style="width: 100%; max-height: 250px; object-fit: cover;" alt="Camper status visual"/>
+          <div class="metric-card" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+            <div>
+              <div class="metric-title">Camper Activity</div>
+              <div class="mt-2" style="max-height: 250px; overflow: hidden; border-radius: 4px; display: flex; align-items: center; justify-content: center; background-color: #1a1c1e;">
+                <img id="camper-status-image" src="hvy_status/hvy_normal.jpg" onerror="if (this.src.indexOf('_normal.jpg') !== -1) { this.onerror=null; this.src='hvy_status/hvy_normal.jpg'; } else { this.src='' + (window.activeUser || 'hvy') + '_status/' + (window.activeUser || 'hvy') + '_normal.jpg'; }" style="width: 100%; max-height: 250px; object-fit: cover;" alt="Camper status visual"/>
+              </div>
+            </div>
+            <!-- Dynamic Camper Status Text display label (FR-007) -->
+            <div class="has-text-centered mt-3">
+              <span class="tag is-warning is-medium has-text-weight-bold" id="camper-status-badge" style="letter-spacing: 1px; width: 100%; border: 1px solid #ff780a; background-color: rgba(255, 120, 10, 0.15); color: #ff780a;">Chilling</span>
             </div>
           </div>
         </div>
