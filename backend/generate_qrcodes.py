@@ -2,8 +2,8 @@
 """
 backend/generate_qrcodes.py
 Zero-dependency QR Code Generator for Open EMF Camper (V2) Dashboards.
-Fetches styled, high-contrast QR code PNG images matching our visual brand palette
-(brand orange on dark gray) and saves them locally to web/qrcodes/.
+Fetches high-contrast black and white QR code PNG images
+and saves them locally to web/qrcodes/.
 """
 
 import os
@@ -14,10 +14,10 @@ import urllib.parse
 PORTAL_BASE_URL = "https://emf.harvinderatwal.com/index.html"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "web", "qrcodes")
 
-# Custom styled color palette (Principle VII dark-mode brand matching)
+# High-contrast black and white color palette for universal scan compatibility
 QR_SIZE = "300x300"
-BRAND_ORANGE = "ff780a"   # Foreground color
-DARK_GRAY = "161719"      # Background color
+COLOR_FOREGROUND = "000000"   # Black foreground
+COLOR_BACKGROUND = "ffffff"   # White background
 
 CAMPERS = {
     "hvy": "Harvy",
@@ -50,7 +50,7 @@ def main():
         qr_api_url = (
             f"https://api.qrserver.com/v1/create-qr-code/"
             f"?size={QR_SIZE}&data={encoded_data}"
-            f"&color={BRAND_ORANGE}&bgcolor={DARK_GRAY}"
+            f"&color={COLOR_FOREGROUND}&bgcolor={COLOR_BACKGROUND}"
         )
         
         output_file = os.path.join(OUTPUT_DIR, f"{shortcode}.png")
