@@ -104,6 +104,41 @@
         </div>
       </div>
 
+      <!-- Reminder Notifications Settings panel (US1 / US2) -->
+      <div class="panel p-4 mb-4">
+        <div class="field">
+          <label class="label">Telemetry Reminder Notifications ⏰</label>
+          <div class="columns is-mobile is-vcentered mb-0 mt-2">
+            <div class="column is-narrow" style="min-width: 140px;">
+              <!-- Switch toggle -->
+              <div class="control">
+                <button class="button is-dark is-fullwidth touch-btn" id="notificationToggleBtn" onclick="toggleNotifications()">
+                  Disabled ❌
+                </button>
+              </div>
+            </div>
+            <div class="column">
+              <!-- Select interval -->
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select id="notificationIntervalSelect" onchange="changeNotificationInterval()" disabled>
+                    <option value="1">1 Minute (Test Option)</option>
+                    <option value="5">5 Minutes (Test Option)</option>
+                    <option value="60" selected>1 Hour (Default)</option>
+                    <option value="120">2 Hours</option>
+                    <option value="240">4 Hours</option>
+                    <option value="480">8 Hours</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="help" id="notificationStatus" style="color: #7b8084; margin-top: 0.5rem;">
+            Toggling "On" requests browser permission to send logging reminders.
+          </p>
+        </div>
+      </div>
+
       <!-- Sync live values & Steps display panel (FR-009) -->
       <div class="columns is-multiline">
         <div class="column is-12">

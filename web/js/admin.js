@@ -26,6 +26,9 @@ if (!USER_NAMES[activeUser]) {
 
 let TRACKER_KEY = localStorage.getItem("admin_tracker_key") || "";
 
+// Global reminder notification interval timer handle (US2)
+let reminderIntervalTimer = null;
+
 // Enforce UI initialization on load
 document.addEventListener("DOMContentLoaded", () => {
   // Set up header titles
@@ -51,6 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Sync live values on load (FR-009)
   syncState();
+
+  // Initialize Reminder Notifications preference (US1 / US2)
+  initNotificationsUI();
 });
 
 function saveTrackerKey() {
@@ -244,4 +250,142 @@ async function triggerReset() {
   if (!confirmation) return;
   
   await submitLog("Reset", "ResetDay");
+}
+
+// --- Reminder Notifications System (W3C Notifications, localStorage, US1/US2/US3) ---
+
+function initNotificationsUI() {
+  const isEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
+  const intervalVal = localStorage.getItem("reminder_notifications_interval") || "60";
+
+  const toggleBtn = document.getElementById("notificationToggleBtn");
+  const selectMenu = document.getElementById("notificationIntervalSelect");
+  const statusHelp = document.getElementById("notificationStatus");
+
+  if (!toggleBtn || !selectMenu) return;
+
+  // Restore cached dropdown selection
+  selectMenu.value = intervalVal;
+
+  if (isEnabled && Notification.permission === "granted") {
+    setNotificationsActive(true);
+  } else {
+    setNotificationsActive(false);
+    // Sync localStorage if permission was manually revoked in browser settings
+    if (Notification.permission !== "granted") {
+      localStorage.setItem("reminder_notifications_enabled", "false");
+    }
+  }
+}
+
+function setNotificationsActive(active) {
+  const toggleBtn = document.getElementById("notificationToggleBtn");
+  const selectMenu = document.getElementById("notificationIntervalSelect");
+  const statusHelp = document.getElementById("notificationStatus");
+
+  if (active) {
+    toggleBtn.textContent = "Enabled  ✅";
+    toggleBtn.className = "button is-success is-fullwidth touch-btn";
+    selectMenu.removeAttribute("disabled");
+    statusHelp.textContent = "✓ Reminders active. You will receive stats reminders at the selected interval.";
+    statusHelp.style.color = "#48c774";
+    scheduleReminderLoop();
+  } else {
+    toggleBtn.textContent = "Disabled ❌";
+    toggleBtn.className = "button is-dark is-fullwidth touch-btn";
+    selectMenu.setAttribute("disabled", "true");
+    statusHelp.textContent = "Reminders disabled. Toggle On to authorize and schedule reminders.";
+    statusHelp.style.color = "#7b8084";
+    clearReminderLoop();
+  }
+}
+
+async function toggleNotifications() {
+  const isCurrentlyEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
+
+  if (isCurrentlyEnabled) {
+    // Disable reminders
+    localStorage.setItem("reminder_notifications_enabled", "false");
+    setNotificationsActive(false);
+    showFlash("Telemetry reminders disabled", "success");
+  } else {
+    // Check Notifications availability
+    if (!("Notification" in window)) {
+      showFlash("Error: Your browser does not support standard Notifications API", "error");
+      return;
+    }
+
+    // Request permissions (FR-003)
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      localStorage.setItem("reminder_notifications_enabled", "true");
+      setNotificationsActive(true);
+      showFlash("Successfully subscribed to telemetry reminders!", "success");
+      // Trigger a sample instant welcome notification
+      new Notification("EMF Camper Reminders Active ⛺", {
+        body: `Welcome, ${USER_NAMES[activeUser] || "Camper"}! You will receive periodic reminders to log your stats.`,
+        icon: "favicon.svg"
+      });
+    } else {
+      localStorage.setItem("reminder_notifications_enabled", "false");
+      setNotificationsActive(false);
+      showFlash("Notification permission denied or blocked by browser", "error");
+    }
+  }
+}
+
+function changeNotificationInterval() {
+  const selectMenu = document.getElementById("notificationIntervalSelect");
+  if (!selectMenu) return;
+
+  const intervalVal = selectMenu.value;
+  localStorage.setItem("reminder_notifications_interval", intervalVal);
+  showFlash(`Reminder interval updated to ${selectMenu.options[selectMenu.selectedIndex].text}`, "success");
+
+  // Re-schedule the loop with the new interval (FR-007)
+  scheduleReminderLoop();
+}
+
+function scheduleReminderLoop() {
+  clearReminderLoop();
+
+  const isEnabled = localStorage.getItem("reminder_notifications_enabled") === "true";
+  if (!isEnabled || Notification.permission !== "granted") return;
+
+  const intervalMinutes = parseInt(localStorage.getItem("reminder_notifications_interval") || "60", 10);
+  const intervalMs = intervalMinutes * 60 * 1000;
+
+  console.log(`[SCHEDULER] Scheduling reminders every ${intervalMinutes} minutes (${intervalMs}ms)`);
+
+  reminderIntervalTimer = setInterval(() => {
+    triggerReminderNotification();
+  }, intervalMs);
+}
+
+function clearReminderLoop() {
+  if (reminderIntervalTimer) {
+    console.log("[SCHEDULER] Clearing previous reminder background timer");
+    clearInterval(reminderIntervalTimer);
+    reminderIntervalTimer = null;
+  }
+}
+
+function triggerReminderNotification() {
+  if (Notification.permission !== "granted") return;
+
+  const displayName = USER_NAMES[activeUser] || "Camper";
+  const notification = new Notification("EMF Camper Reminder ⛺", {
+    body: `Hey ${displayName}! Remember to log your active steps, status, and beverage count on your Logging Portal.`,
+    icon: "favicon.svg",
+    requireInteraction: true
+  });
+
+  // Tap/click window refocus interaction (FR-005 / US3)
+  notification.onclick = function(event) {
+    event.preventDefault();
+    window.focus();
+    this.close();
+  };
+
+  localStorage.setItem("reminder_notifications_last_fired", new Date().toISOString());
 }

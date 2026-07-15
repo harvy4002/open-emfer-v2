@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/016-all-time-leaderboard-and-daily-resets/plan.md
+at specs/017-browser-notifications-scheduler/plan.md
 <!-- SPECKIT END -->
