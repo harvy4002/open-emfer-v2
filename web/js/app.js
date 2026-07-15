@@ -590,7 +590,7 @@ function updateDrinksBreakdown(categories) {
     .filter(([name, count]) => {
       const countInt = parseInt(count, 10) || 0;
       // Filter out non-beverage or internal metadata keys (e.g. toilet visits, sync status, etc.)
-      const isInternalMetadata = ["toilet_visits", "ToiletVisit", "Start", "Pee", "Poo"].includes(name);
+      const isInternalMetadata = ["toilet_visits", "ToiletVisit", "Start", "Stop", "Reset", "ResetDay", "Pee", "Poo"].includes(name);
       return !isInternalMetadata && countInt >= 2;
     })
     .sort((a, b) => b[1] - a[1]); // Sort descending by consumed count for highest signal
