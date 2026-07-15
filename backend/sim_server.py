@@ -250,6 +250,103 @@ def process_playback(user_id, until_timestamp):
             
     return totals, len(events)
 
+def trigger_lazy_reset(user_id, current_timestamp=None):
+    """
+    Checks if a calendar day transition (UTC) has occurred since last_reset_date.
+    If so, appends a ResetDay event, baseline-caches steps, and resets daily aggregates.
+    """
+    if not current_timestamp:
+        current_timestamp = datetime.utcnow().isoformat() + "Z"
+        
+    current_date = current_timestamp.split("T")[0] # Get YYYY-MM-DD
+    
+    user_key = f"camper#aggregates#{user_id}"
+    user_totals = db_get_item(user_key, "totals")
+    
+    # If no record exists, let the normal flow initialize it
+    if not user_totals:
+        return
+        
+    last_reset = user_totals.get("last_reset_date")
+    if not last_reset:
+        # If last_reset_date is not set, initialize it to today without resetting
+        user_totals["last_reset_date"] = current_date
+        db_put_item(user_key, "totals", user_totals)
+        return
+        
+    if last_reset != current_date:
+        # A day transition has occurred! Perform automated reset (FR-001/FR-005)
+        print(f"[LAZY RESET] UTC transition detected for {user_id}: {last_reset} -> {current_date}")
+        
+        # 1. Append ResetDay event to event store for historical analysis
+        payload = {
+            "user_id": user_id,
+            "event": "Reset",
+            "type": "ResetDay"
+        }
+        append_telemetry_event(user_id, "Reset", payload)
+        
+        # 2. Get current steps from device state to set as the baseline for the new day
+        dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+        device_state = db_get_item(dev_key, "state")
+        steps_baseline = int(device_state.get("cumulative_steps", 0)) if device_state else 0
+        
+        # Preserve all-time metrics
+        all_time_drinks = int(user_totals.get("all_time_total_drinks", 0))
+        all_time_steps = int(user_totals.get("all_time_cumulative_steps", 0))
+        
+        # Reset active daily totals
+        user_totals["categories"] = {}
+        user_totals["total_drinks"] = 0
+        user_totals["beer_drinks"] = 0
+        user_totals["status"] = "normal"
+        user_totals["steps_baseline"] = steps_baseline
+        user_totals["last_reset_date"] = current_date
+        user_totals["all_time_total_drinks"] = all_time_drinks
+        user_totals["all_time_cumulative_steps"] = all_time_steps
+        
+        db_put_item(user_key, "totals", user_totals)
+
+def update_camper_steps_and_leaderboard(user_id, steps):
+    """Updates the camper aggregate all-time steps and updates the combined steps leaderboard."""
+    # 1. Update individual camper aggregate
+    user_key = f"camper#aggregates#{user_id}"
+    user_totals = db_get_item(user_key, "totals") or {
+        "user_id": user_id,
+        "total_drinks": 0,
+        "beer_drinks": 0,
+        "categories": {},
+        "all_time_total_drinks": 0,
+        "all_time_cumulative_steps": 0,
+        "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
+    }
+    user_totals["all_time_cumulative_steps"] = steps
+    db_put_item(user_key, "totals", user_totals)
+
+    # 2. Update combined steps leaderboard (FR-003)
+    combined_key = "camper#aggregates#combined"
+    combined_totals = db_get_item(combined_key, "totals") or {
+        "user_id": "combined",
+        "total_drinks": 0,
+        "beer_drinks": 0,
+        "categories": {},
+        "leaderboard": [],
+        "steps_leaderboard": []
+    }
+    
+    steps_leaderboard = combined_totals.get("steps_leaderboard", [])
+    user_entry = next((x for x in steps_leaderboard if x["user_id"] == user_id), None)
+    if user_entry:
+        user_entry["all_time_steps"] = steps
+    else:
+        steps_leaderboard.append({
+            "user_id": user_id,
+            "display_name": user_id.capitalize(),
+            "all_time_steps": steps
+        })
+    combined_totals["steps_leaderboard"] = sorted(steps_leaderboard, key=lambda x: int(x.get("all_time_steps", 0)), reverse=True)
+    db_put_item(combined_key, "totals", combined_totals)
+
 # --- Unified REST Core Routing Logic ---
 
 def process_api_get(path, query_params):
@@ -309,6 +406,7 @@ def process_api_get(path, query_params):
             response_payload["total_drinks"] = int(combined_aggs.get("total_drinks", 0))
             response_payload["beer_drinks"] = int(combined_aggs.get("beer_drinks", 0))
             response_payload["leaderboard"] = combined_aggs.get("leaderboard", [])
+            response_payload["steps_leaderboard"] = combined_aggs.get("steps_leaderboard", [])
 
         return 200, headers, json_dumps(response_payload, indent=2)
         
@@ -324,11 +422,16 @@ def process_api_get(path, query_params):
             "location_history": []
         }
         
-        # Convert DynamoDB string floats back to numeric for response
-        try:
-            dist = float(device_state.get("cumulative_distance_km", 0.0))
-        except ValueError:
-            dist = 0.0
+        # Calculate daily steps and distance from baseline-subtracted cumulative metrics (daily reset compliance)
+        user_key = f"camper#aggregates#{user_id}"
+        user_totals = db_get_item(user_key, "totals") or {}
+        baseline_steps = int(user_totals.get("steps_baseline", 0))
+        total_steps = int(device_state.get("cumulative_steps", 0))
+        daily_steps = max(0, total_steps - baseline_steps)
+        
+        baseline_dist = baseline_steps * 0.00063
+        total_dist = float(device_state.get("cumulative_distance_km", 0.0))
+        dist = max(0.0, total_dist - baseline_dist)
             
         history = device_state.get("location_history", [])
         safe_history = []
@@ -346,7 +449,7 @@ def process_api_get(path, query_params):
             "status": "success",
             "user_id": user_id,
             "cumulative_distance_km": dist,
-            "cumulative_steps": int(device_state.get("cumulative_steps", 0)),
+            "cumulative_steps": daily_steps,
             "location_history": safe_history
         }, indent=2)
         
@@ -399,6 +502,8 @@ def process_api_post(path, payload, auth_header):
 
     if path == "/beer":
         user_id = payload.get("user_id") or "hvy"
+        trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
+        
         event_type = payload.get("event")
         name = payload.get("type")
         is_beer = payload.get("beer") == "true" or payload.get("beer") is True
@@ -413,7 +518,10 @@ def process_api_post(path, payload, auth_header):
             "user_id": user_id,
             "total_drinks": 0,
             "beer_drinks": 0,
-            "categories": {}
+            "categories": {},
+            "all_time_total_drinks": 0,
+            "all_time_cumulative_steps": 0,
+            "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
         }
         
         val_offset = -1 if reverse else 1
@@ -423,6 +531,9 @@ def process_api_post(path, payload, auth_header):
             user_totals["total_drinks"] = max(0, int(user_totals["total_drinks"]) + val_offset)
             if is_beer:
                 user_totals["beer_drinks"] = max(0, int(user_totals["beer_drinks"]) + val_offset)
+                
+            # Increment all-time total drinks persistent accumulator (FR-002)
+            user_totals["all_time_total_drinks"] = max(0, int(user_totals.get("all_time_total_drinks", 0)) + val_offset)
         elif event_type in ["Toilet", "Lecture", "Workshop", "Gaming", "Tent", "NewPeople", "Martini"]:
             user_totals["categories"][name] = max(0, int(user_totals["categories"].get(name, 0)) + val_offset)
         elif event_type.lower() == "status":
@@ -441,7 +552,8 @@ def process_api_post(path, payload, auth_header):
             "total_drinks": 0,
             "beer_drinks": 0,
             "categories": {},
-            "leaderboard": []
+            "leaderboard": [],
+            "steps_leaderboard": []
         }
         
         if event_type == "Drinks":
@@ -458,19 +570,21 @@ def process_api_post(path, payload, auth_header):
             combined_totals["total_drinks"] = 0
             combined_totals["beer_drinks"] = 0
             combined_totals["leaderboard"] = []
+            combined_totals["steps_leaderboard"] = []
             combined_totals["status"] = "normal"
             
-        # 3. Update Leaderboard Standing (FR-003)
+        # 3. Update Leaderboard Standing with All-Time totals (FR-001/FR-003)
         leaderboard = combined_totals.get("leaderboard", [])
         user_entry = next((x for x in leaderboard if x["user_id"] == user_id), None)
         
+        all_time_drinks = int(user_totals.get("all_time_total_drinks", 0))
         if user_entry:
-            user_entry["total_drinks"] = int(user_totals["total_drinks"])
+            user_entry["total_drinks"] = all_time_drinks
         else:
             leaderboard.append({
                 "user_id": user_id,
                 "display_name": user_id.capitalize(),
-                "total_drinks": int(user_totals["total_drinks"])
+                "total_drinks": all_time_drinks
             })
         combined_totals["leaderboard"] = sorted([x for x in leaderboard if int(x["total_drinks"]) > 0], key=lambda x: int(x["total_drinks"]), reverse=True)
         
@@ -486,6 +600,7 @@ def process_api_post(path, payload, auth_header):
         
     elif path == "/sensecap":
         user_id = payload.get("user_id") or "hvy"
+        trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
         
         # Append immutable event to event store (FR-001/FR-002)
         append_telemetry_event(user_id, "sensecap", payload)
@@ -547,6 +662,9 @@ def process_api_post(path, payload, auth_header):
                 
         db_put_item(dev_key, "state", device_state)
         
+        # Dual-write all-time steps aggregates and combined steps leaderboard (FR-003)
+        update_camper_steps_and_leaderboard(user_id, int(device_state.get("cumulative_steps", 0)))
+        
         return 201, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
@@ -555,6 +673,7 @@ def process_api_post(path, payload, auth_header):
         
     elif path == "/browan":
         user_id = payload.get("user_id") or "hvy"
+        trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
         
         # Append immutable event to event store (FR-001/FR-002)
         append_telemetry_event(user_id, "browan", payload)
@@ -577,6 +696,7 @@ def process_api_post(path, payload, auth_header):
         
     elif path == "/monzo-sync-simulation":
         user_id = payload.get("user_id") or "hvy"
+        trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
         
         # Append immutable event to event store (FR-001/FR-002)
         append_telemetry_event(user_id, "monzo", payload)
@@ -618,6 +738,8 @@ def process_api_post(path, payload, auth_header):
 
     elif path == "/steps":
         user_id = payload.get("user_id") or "hvy"
+        trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
+        
         steps = int(payload.get("steps") or 0)
         timestamp = datetime.now().isoformat() + "Z"
 
@@ -638,6 +760,9 @@ def process_api_post(path, payload, auth_header):
         device_state["cumulative_distance_km"] = steps * 0.00063
 
         db_put_item(dev_key, "state", device_state)
+        
+        # Dual-write all-time steps aggregates and combined steps leaderboard (FR-003)
+        update_camper_steps_and_leaderboard(user_id, steps)
 
         return 201, headers, json_dumps({
             "status": "success",

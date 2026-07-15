@@ -166,6 +166,7 @@ async function fetchTelemetry() {
     // Update Leaderboard if Combined view
     if (activeUser === "combined") {
       updateLeaderboard(data.leaderboard || []);
+      updateStepsLeaderboard(data.steps_leaderboard || []);
     }
 
     // 2. Fetch history (steps & temperature & GPS location history map)
@@ -245,7 +246,29 @@ function updateLeaderboard(leaderboard) {
     listEl.innerHTML += `
       <div class="leaderboard-item">
         <span>${fullName}</span>
-        <span style="color: #ff780a;">${user.total_drinks} drinks</span>
+        <span style="color: #ff780a;">${user.total_drinks} total drinks</span>
+      </div>
+    `;
+  });
+}
+
+function updateStepsLeaderboard(stepsLeaderboard) {
+  const listEl = document.getElementById("steps-board-list") || document.getElementById("steps-leaderboard-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  if (stepsLeaderboard.length === 0) {
+    listEl.innerHTML = `<div class="has-text-grey has-text-centered p-3">No step telemetry available yet.</div>`;
+    return;
+  }
+
+  stepsLeaderboard.forEach(user => {
+    const fullName = USER_NAMES[user.user_id] || `${user.user_id.toUpperCase()}`;
+    const stepsFormatted = Number(user.all_time_steps || 0).toLocaleString();
+    listEl.innerHTML += `
+      <div class="leaderboard-item">
+        <span>${fullName}</span>
+        <span style="color: #ff780a;">${stepsFormatted} steps</span>
       </div>
     `;
   });

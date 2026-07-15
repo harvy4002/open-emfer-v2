@@ -129,3 +129,54 @@ def test_spirit_drinks_aggregation():
     assert data["categories"].get("G+T") == 1
     assert data["categories"].get("Negroni") == 1
 
+def test_all_time_drinks_aggregation():
+    """Verify that posting a drink POST aggregates all_time_total_drinks and is unaffected by manual daily resets."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Log drinks
+    payload_m = {"user_id": user_id, "event": "Drinks", "type": "Martini"}
+    sim_server.process_api_post("/beer", payload_m, auth_key)
+    
+    # Verify both total_drinks and all_time_total_drinks are 1
+    agg_key = f"camper#aggregates#{user_id}"
+    user_totals = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals["total_drinks"] == 1
+    assert user_totals["all_time_total_drinks"] == 1
+    
+    # 2. Reset the daily totals
+    payload_reset = {"user_id": user_id, "event": "Reset", "type": "ResetDay"}
+    sim_server.process_api_post("/beer", payload_reset, auth_key)
+    
+    # Verify daily total_drinks resets to 0 but all_time_total_drinks is preserved at 1
+    user_totals_2 = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals_2["total_drinks"] == 0
+    assert user_totals_2["all_time_total_drinks"] == 1
+
+def test_lazy_daily_reset():
+    """Verify that a UTC calendar day transition automatically triggers a lazy daily reset."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Log a baseline drink to initialize and set today's date
+    payload_w = {"user_id": user_id, "event": "Drinks", "type": "Water"}
+    sim_server.process_api_post("/beer", payload_w, auth_key)
+    
+    agg_key = f"camper#aggregates#{user_id}"
+    user_totals = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals["total_drinks"] == 1
+    assert user_totals["last_reset_date"] is not None
+    
+    # 2. Simulate date boundary transition by setting last_reset_date to yesterday
+    user_totals["last_reset_date"] = "2026-07-14"
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # 3. Post a new drink on the "new" day (today, July 15)
+    sim_server.process_api_post("/beer", payload_w, auth_key)
+    
+    # Verify daily total_drinks reset and counts start at 1 for the new day
+    user_totals_after = sim_server.db_get_item(agg_key, "totals")
+    assert user_totals_after["total_drinks"] == 1
+    assert user_totals_after["all_time_total_drinks"] == 2
+
+
