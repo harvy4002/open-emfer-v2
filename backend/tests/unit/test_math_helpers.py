@@ -211,4 +211,45 @@ def test_push_subscribe_storage():
     assert user_totals["push_last_notified_time"] is not None
 
 
+def test_manual_expenditure_logging():
+    """Verify manual expenditure logs item description when provided, and defaults to price when absent."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Post manual expenditure with item name
+    payload_item = {
+        "user_id": user_id,
+        "amount": -5.50,
+        "merchant": "Burger"
+    }
+    status, _, body = sim_server.process_api_post("/monzo-sync-simulation", payload_item, auth_key)
+    assert status == 201
+    
+    # Verify transaction list has the Burger
+    status_get, _, body_get = sim_server.process_api_get("/monzo", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body_get)
+    burger_tx = [t for t in data["transactions"] if t["description"] == "Burger"]
+    assert len(burger_tx) == 1
+    assert burger_tx[0]["amount_gbp"] == -5.50
+    
+    # 2. Post manual expenditure without item name (merchant is empty string or absent)
+    payload_no_item = {
+        "user_id": user_id,
+        "amount": -7.25,
+        "merchant": ""
+    }
+    status, _, body = sim_server.process_api_post("/monzo-sync-simulation", payload_no_item, auth_key)
+    assert status == 201
+    
+    # Verify description defaults to formatted price "£7.25"
+    status_get_2, _, body_get_2 = sim_server.process_api_get("/monzo", {"user_id": user_id})
+    assert status_get_2 == 200
+    data_2 = json.loads(body_get_2)
+    price_tx = [t for t in data_2["transactions"] if t["description"] == "£7.25"]
+    assert len(price_tx) == 1
+    assert price_tx[0]["amount_gbp"] == -7.25
+
+
+
 

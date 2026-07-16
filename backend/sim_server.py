@@ -815,7 +815,9 @@ def process_api_post(path, payload, auth_header):
         append_telemetry_event(user_id, "monzo", payload)
         
         amount = float(payload.get("amount") or -5.00)
-        desc = payload.get("merchant") or "Simulated Expense"
+        desc = payload.get("merchant") or ""
+        if not desc or desc.strip() == "":
+            desc = f"£{abs(amount):.2f}"
         timestamp = datetime.now().isoformat() + "Z"
         
         monzo_latest = db_get_item("monzo#transactions", "latest") or {

@@ -245,6 +245,64 @@ async function submitManualSteps() {
   }
 }
 
+async function submitManualExpenditure() {
+  if (submitLocked) return;
+  if (!TRACKER_KEY) {
+    showFlash("Error: Please provide a valid Tracker Key first", "error");
+    return;
+  }
+
+  const itemInput = document.getElementById("manual-expenditure-item");
+  const priceInput = document.getElementById("manual-expenditure-price");
+
+  const itemVal = itemInput.value.trim();
+  const priceVal = parseFloat(priceInput.value);
+
+  if (isNaN(priceVal) || priceVal <= 0) {
+    showFlash("Please enter a valid positive price", "error");
+    return;
+  }
+
+  submitLocked = true;
+  document.querySelectorAll(".button.touch-btn").forEach(btn => btn.setAttribute("disabled", "true"));
+
+  const payload = {
+    user_id: activeUser,
+    amount: -Math.abs(priceVal),
+    merchant: itemVal || `£${priceVal.toFixed(2)}`
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/monzo-sync-simulation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": TRACKER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 201 || response.status === 200) {
+      showFlash(`Success: logged expenditure of £${priceVal.toFixed(2)}`, "success");
+      itemInput.value = "";
+      priceInput.value = "";
+      await syncState();
+    } else {
+      const err = await response.json();
+      showFlash(`Failed: ${err.message || 'Server error'}`, "error");
+    }
+  } catch (error) {
+    console.error(error);
+    showFlash(`Error: Network offline or blocked`, "error");
+  } finally {
+    setTimeout(() => {
+      submitLocked = false;
+      document.querySelectorAll(".button.touch-btn").forEach(btn => btn.removeAttribute("disabled"));
+      syncState();
+    }, 500);
+  }
+}
+
 async function triggerReset() {
   const confirmation = confirm(`Are you sure you want to RESET ALL camper data for ${activeUser.toUpperCase()}? This cannot be undone.`);
   if (!confirmation) return;

@@ -473,6 +473,26 @@
             </div>
           </nav>
 
+          <!-- Manual Expenditure Logging -->
+          <nav class="panel mb-4">
+            <p class="panel-heading">Manual Expenditure 💸</p>
+            <div class="p-3">
+              <div class="field mb-3">
+                <label class="label has-text-white is-size-7 mb-1">Item Name / Description (Optional)</label>
+                <div class="control">
+                  <input class="input" type="text" id="manual-expenditure-item" placeholder="e.g. Burger, Cider, Merch"/>
+                </div>
+              </div>
+              <div class="field mb-3">
+                <label class="label has-text-white is-size-7 mb-1">Price (£)</label>
+                <div class="control">
+                  <input class="input" type="number" step="0.01" min="0.01" id="manual-expenditure-price" placeholder="e.g. 5.50"/>
+                </div>
+              </div>
+              <button class="button is-link is-fullwidth touch-btn" onclick="submitManualExpenditure()">Log Expenditure</button>
+            </div>
+          </nav>
+
           <!-- Reset Day (FR-001 / Admin Logging forms) -->
           <nav class="panel">
             <div class="p-3">
