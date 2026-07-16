@@ -604,13 +604,13 @@ function updateDrinksBreakdown(categories) {
 
   let hasBreakdown = false;
 
-  // Filter and sort categories where count is strictly greater than 1 (count >= 2)
+  // Filter and sort categories where count is strictly greater than 0 (count >= 1)
   const breakdownItems = Object.entries(categories)
     .filter(([name, count]) => {
       const countInt = parseInt(count, 10) || 0;
       // Filter out non-beverage or internal metadata keys (e.g. toilet visits, sync status, etc.)
       const isInternalMetadata = ["toilet_visits", "ToiletVisit", "Start", "Stop", "Reset", "ResetDay", "Pee", "Poo"].includes(name);
-      return !isInternalMetadata && countInt >= 2;
+      return !isInternalMetadata && countInt >= 1;
     })
     .sort((a, b) => b[1] - a[1]); // Sort descending by consumed count for highest signal
 
@@ -628,7 +628,7 @@ function updateDrinksBreakdown(categories) {
   }
 
   if (!hasBreakdown) {
-    listEl.innerHTML = `<span class="has-text-grey is-size-7">None logged (>1) yet</span>`;
+    listEl.innerHTML = `<span class="has-text-grey is-size-7">None logged yet</span>`;
   }
 }
 
