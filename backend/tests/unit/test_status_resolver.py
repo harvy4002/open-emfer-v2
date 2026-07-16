@@ -63,3 +63,28 @@ def test_status_resolver_default_and_normalization():
     user_totals = sim_server.db_get_item(agg_key, "totals")
     assert user_totals is not None
     assert user_totals.get("status") == "sleeping"
+
+
+def test_status_drunk():
+    """Verify that posting 'Drunk' status saves it successfully and normalizes it."""
+    user_id = "hvy"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # Post Drunk status
+    status_post, _, _ = sim_server.process_api_post("/beer", {
+        "user_id": user_id,
+        "event": "status",
+        "type": "Drunk"
+    }, auth_key)
+    assert status_post == 201
+    
+    # Retrieve status and verify
+    status_get, _, body = sim_server.process_api_get("/beer", {
+        "user_id": user_id,
+        "event": "status",
+        "type": "latest"
+    })
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["status"] == "drunk"
+

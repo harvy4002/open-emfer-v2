@@ -510,7 +510,7 @@ function resolveStatusImage(statusText) {
   if (status.includes("sleep") || status.includes("nap") || status.includes("bed")) {
     return "sleeping";
   }
-  if (status.includes("drink") || status.includes("beer") || status.includes("pub") || status.includes("pint") || status.includes("beverage")) {
+  if (status.includes("drink") || status.includes("beer") || status.includes("pub") || status.includes("pint") || status.includes("beverage") || status.includes("drunk")) {
     return "drinking";
   }
   if (status.includes("eat") || status.includes("food") || status.includes("dinner") || status.includes("lunch") || status.includes("hungry") || status.includes("eating")) {
