@@ -13,7 +13,7 @@ import decimal
 import uuid
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def make_event_sort_key(timestamp=None):
     """Generates a lexicographically sortable event sort key: event#<iso8601>#<short_uuid_hash>."""
@@ -254,13 +254,25 @@ def process_playback(user_id, until_timestamp):
 
 def trigger_lazy_reset(user_id, current_timestamp=None):
     """
-    Checks if a calendar day transition (UTC) has occurred since last_reset_date.
+    Checks if a daily transition (defined as 4am UTC) has occurred since last_reset_date.
     If so, appends a ResetDay event, baseline-caches steps, and resets daily aggregates.
     """
+    # 4am transition boundary: subtract 4 hours to compute the effective date
     if not current_timestamp:
-        current_timestamp = datetime.utcnow().isoformat() + "Z"
-        
-    current_date = current_timestamp.split("T")[0] # Get YYYY-MM-DD
+        dt = datetime.utcnow()
+    else:
+        # Parse ISO timestamp (handle optional Z or fractional seconds)
+        ts_str = current_timestamp.rstrip("Z")
+        try:
+            if "." in ts_str:
+                dt = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S.%f")
+            else:
+                dt = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            dt = datetime.utcnow()
+
+    effective_dt = dt - timedelta(hours=4)
+    current_date = effective_dt.strftime("%Y-%m-%d")
     
     user_key = f"camper#aggregates#{user_id}"
     user_totals = db_get_item(user_key, "totals")

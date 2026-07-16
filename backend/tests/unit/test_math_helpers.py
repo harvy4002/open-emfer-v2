@@ -308,6 +308,37 @@ def test_club_mate_aggregation():
     assert data["categories"].get("ClubMate") == 1
 
 
+def test_lazy_reset_4am_cutoff():
+    """Verify that daily transitions happen exactly at 4:00 AM UTC (effective date transition)."""
+    user_id = "cha"
+    agg_key = f"camper#aggregates#{user_id}"
+    
+    # 1. Start with aggregates initialized
+    user_totals = {
+        "user_id": user_id,
+        "total_drinks": 5,
+        "beer_drinks": 2,
+        "categories": {"Lager": 2, "Water": 3},
+        "last_reset_date": "2026-07-14"
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # 2. Check at 3:59:59 AM on July 15 (effective date is still July 14 because of 4-hour shift)
+    # Should NOT trigger a reset because effective date (July 14) == last_reset_date (July 14)
+    sim_server.trigger_lazy_reset(user_id, "2026-07-15T03:59:59Z")
+    totals_before = sim_server.db_get_item(agg_key, "totals")
+    assert totals_before["total_drinks"] == 5
+    assert totals_before["last_reset_date"] == "2026-07-14"
+    
+    # 3. Check at exactly 4:00:00 AM on July 15 (effective date transitions to July 15)
+    # Should trigger a reset because effective date (July 15) != last_reset_date (July 14)
+    sim_server.trigger_lazy_reset(user_id, "2026-07-15T04:00:00Z")
+    totals_after = sim_server.db_get_item(agg_key, "totals")
+    assert totals_after["total_drinks"] == 0
+    assert totals_after["last_reset_date"] == "2026-07-15"
+
+
+
 
 
 
