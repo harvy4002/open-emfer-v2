@@ -286,6 +286,29 @@ def test_classy_beverages_aggregation():
     assert data["categories"].get("BoxWine") == 1
 
 
+def test_club_mate_aggregation():
+    """Verify that logging ClubMate increments total_drinks but NOT beer_drinks."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    payload = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "ClubMate",
+        "beer": ""
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload, auth_key)
+    assert status == 201
+    
+    status_get, _, body = sim_server.process_api_get("/beer", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["total_drinks"] == 1
+    assert data["beer_drinks"] == 0
+    assert data["categories"].get("ClubMate") == 1
+
+
+
 
 
 

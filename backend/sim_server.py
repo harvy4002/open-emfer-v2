@@ -88,7 +88,7 @@ DEFAULT_DB = {
             "total_drinks": 0,
             "beer_drinks": 0,
             "categories": {
-                "Water": 0, "Coffee": 0, "Tea": 0, "Soft": 0, "Lager": 0,
+                "Water": 0, "Coffee": 0, "Tea": 0, "Soft": 0, "ClubMate": 0, "Lager": 0,
                 "IPA": 0, "Cider": 0, "Ale": 0, "Stout": 0, "Porter": 0,
                 "Spirits": 0, "Martini": 0, "G+T": 0, "Negroni": 0, "Port": 0,
                 "BoxWine": 0, "BoxPerry": 0,

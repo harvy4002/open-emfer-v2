@@ -103,6 +103,7 @@ async function syncState() {
       updateDisplayCount("Coffee", categories["Coffee"] || 0);
       updateDisplayCount("Tea", categories["Tea"] || 0);
       updateDisplayCount("Soft", categories["Soft"] || 0);
+      updateDisplayCount("ClubMate", categories["ClubMate"] || 0);
       updateDisplayCount("Lager", categories["Lager"] || 0);
       updateDisplayCount("IPA", categories["IPA"] || 0);
       updateDisplayCount("Cider", categories["Cider"] || 0);

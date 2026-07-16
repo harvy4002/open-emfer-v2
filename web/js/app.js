@@ -588,6 +588,7 @@ function updateDrinksBreakdown(categories) {
     "Coffee": "☕",
     "Tea": "🍵",
     "Soft": "🥤",
+    "ClubMate": "🧉",
     "Lager": "🍺",
     "IPA": "🍺",
     "Cider": "🍺",
