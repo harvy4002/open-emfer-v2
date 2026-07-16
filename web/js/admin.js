@@ -107,10 +107,12 @@ async function syncState() {
       updateDisplayCount("IPA", categories["IPA"] || 0);
       updateDisplayCount("Cider", categories["Cider"] || 0);
       updateDisplayCount("Ale", categories["Ale"] || 0);
+      updateDisplayCount("BoxPerry", categories["BoxPerry"] || 0);
       updateDisplayCount("Martini", categories["Martini"] || 0);
       updateDisplayCount("G+T", categories["G+T"] || 0);
       updateDisplayCount("Negroni", categories["Negroni"] || 0);
       updateDisplayCount("Port", categories["Port"] || 0);
+      updateDisplayCount("BoxWine", categories["BoxWine"] || 0);
       updateDisplayCount("Pee", categories["Pee"] || 0);
       updateDisplayCount("Poo", categories["Poo"] || 0);
     }
@@ -157,7 +159,7 @@ async function submitLog(eventCategory, typeName, reverse = false) {
   submitLocked = true;
   document.querySelectorAll(".button.touch-btn").forEach(btn => btn.setAttribute("disabled", "true"));
   
-  const certainBeerValues = ["Lager", "IPA", "Cider", "Ale"];
+  const certainBeerValues = ["Lager", "IPA", "Cider", "Ale", "BoxPerry"];
   const isBeer = certainBeerValues.includes(typeName);
 
   const payload = {

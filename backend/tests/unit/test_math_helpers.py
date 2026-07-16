@@ -251,5 +251,41 @@ def test_manual_expenditure_logging():
     assert price_tx[0]["amount_gbp"] == -7.25
 
 
+def test_classy_beverages_aggregation():
+    """Verify that logging BoxPerry increments beer_drinks, while BoxWine increments total_drinks but NOT beer_drinks."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # 1. Log BoxPerry (classified as beer/cider equivalent)
+    payload_perry = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "BoxPerry",
+        "beer": "true"
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload_perry, auth_key)
+    assert status == 201
+    
+    # 2. Log BoxWine (classified as classy wine equivalent, not beer_drinks)
+    payload_wine = {
+        "user_id": user_id,
+        "event": "Drinks",
+        "type": "BoxWine",
+        "beer": ""
+    }
+    status, _, _ = sim_server.process_api_post("/beer", payload_wine, auth_key)
+    assert status == 201
+    
+    # 3. Retrieve and assert counts
+    status_get, _, body = sim_server.process_api_get("/beer", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["total_drinks"] == 2
+    assert data["beer_drinks"] == 1  # BoxPerry incremented it, BoxWine did not
+    assert data["categories"].get("BoxPerry") == 1
+    assert data["categories"].get("BoxWine") == 1
+
+
+
 
 

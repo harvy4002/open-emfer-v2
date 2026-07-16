@@ -596,6 +596,8 @@ function updateDrinksBreakdown(categories) {
     "G+T": "🍹",
     "Negroni": "🥃",
     "Port": "🍷",
+    "BoxWine": "📦🍷",
+    "BoxPerry": "📦🍐",
     "Stout": "🍺",
     "Porter": "🍺"
   };
