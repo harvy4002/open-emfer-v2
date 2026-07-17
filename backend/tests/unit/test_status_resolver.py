@@ -88,3 +88,28 @@ def test_status_drunk():
     data = json.loads(body)
     assert data["status"] == "drunk"
 
+
+def test_status_coding():
+    """Verify that posting 'Coding' status saves it successfully and normalizes it."""
+    user_id = "hvy"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    
+    # Post Coding status
+    status_post, _, _ = sim_server.process_api_post("/beer", {
+        "user_id": user_id,
+        "event": "status",
+        "type": "Coding"
+    }, auth_key)
+    assert status_post == 201
+    
+    # Retrieve status and verify
+    status_get, _, body = sim_server.process_api_get("/beer", {
+        "user_id": user_id,
+        "event": "status",
+        "type": "latest"
+    })
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["status"] == "coding"
+
+
