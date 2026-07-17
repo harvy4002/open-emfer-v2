@@ -528,6 +528,47 @@ def process_api_get(path, query_params):
         # Append leaderboard standings if combined stats are requested
         if user_id == "combined":
             combined_aggs = db_get_item("camper#aggregates#combined", "totals") or {}
+            
+            # Dynamically compile and self-heal standings for all active campers (UX completeness)
+            leaderboard = combined_aggs.get("leaderboard", [])
+            steps_leaderboard = combined_aggs.get("steps_leaderboard", [])
+            
+            for cid in ["hvy", "cha", "ash", "tin"]:
+                user_key = f"camper#aggregates#{cid}"
+                user_totals = db_get_item(user_key, "totals")
+                if user_totals:
+                    all_time_drinks = int(user_totals.get("all_time_total_drinks", 0))
+                    all_time_steps = int(user_totals.get("all_time_cumulative_steps", 0))
+                    
+                    # Ensure present in drinks leaderboard
+                    u_entry = next((x for x in leaderboard if x["user_id"] == cid), None)
+                    if u_entry:
+                        u_entry["total_drinks"] = all_time_drinks
+                    else:
+                        leaderboard.append({
+                            "user_id": cid,
+                            "display_name": cid.capitalize(),
+                            "total_drinks": all_time_drinks
+                        })
+                        
+                    # Ensure present in steps leaderboard
+                    s_entry = next((x for x in steps_leaderboard if x["user_id"] == cid), None)
+                    if s_entry:
+                        s_entry["all_time_steps"] = all_time_steps
+                    else:
+                        steps_leaderboard.append({
+                            "user_id": cid,
+                            "display_name": cid.capitalize(),
+                            "all_time_steps": all_time_steps
+                        })
+                        
+            # Re-sort descending and filter out 0-beverage entries from drinks leaderboard
+            combined_aggs["leaderboard"] = sorted([x for x in leaderboard if int(x.get("total_drinks", 0)) > 0], key=lambda x: int(x.get("total_drinks", 0)), reverse=True)
+            combined_aggs["steps_leaderboard"] = sorted(steps_leaderboard, key=lambda x: int(x.get("all_time_steps", 0)), reverse=True)
+            
+            # Write back to combined aggregate totals to heal state persistently
+            db_put_item("camper#aggregates#combined", "totals", combined_aggs)
+            
             response_payload["categories"] = combined_aggs.get("categories", {})
             response_payload["total_drinks"] = int(combined_aggs.get("total_drinks", 0))
             response_payload["beer_drinks"] = int(combined_aggs.get("beer_drinks", 0))
