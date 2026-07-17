@@ -227,10 +227,18 @@
 
         <!-- Monzo Campaign expenses (FR-001) -->
         <div class="column is-6-mobile is-12-tablet is-3-desktop" id="monzo-panel">
-          <div class="metric-card">
+          <div class="metric-card" style="display: flex; flex-direction: column; min-height: 180px;">
             <div class="metric-title">Campsite Expenditure</div>
             <div class="metric-value" style="color: #ff780a;" id="expenditure-counter">£0.00</div>
-            <div class="metric-sub">Monzo Campaign Balance</div>
+            <div class="metric-sub mb-3">Monzo Campaign Balance</div>
+            
+            <!-- Transactions List Container -->
+            <div class="mt-2" style="flex-grow: 1; overflow-y: auto; max-height: 140px; border-top: 1px solid #2c2f33; padding-top: 8px;">
+              <div id="expenditure-list" class="is-size-7 has-text-grey">
+                <!-- Rendered dynamically via JS -->
+                No transactions logged
+              </div>
+            </div>
           </div>
         </div>
 

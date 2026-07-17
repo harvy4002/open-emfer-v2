@@ -231,6 +231,33 @@ async function fetchTelemetry() {
       if (resExpenses.ok) {
         const expenseData = await resExpenses.json();
         document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;
+        
+        const listEl = document.getElementById("expenditure-list");
+        if (listEl) {
+          listEl.innerHTML = "";
+          const txs = expenseData.transactions || [];
+          if (txs.length === 0) {
+            listEl.innerHTML = `<div class="has-text-grey-light is-size-7">No transactions logged</div>`;
+          } else {
+            // Sort chronologically descending (newest first)
+            const sortedTxs = [...txs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sortedTxs.forEach(tx => {
+              const dateStr = new Date(tx.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+              const name = tx.description || "Expense";
+              const amountAbs = Math.abs(tx.amount_gbp || tx.amount || 0).toFixed(2);
+              
+              listEl.innerHTML += `
+                <div class="is-flex is-justify-content-space-between mb-1" style="border-bottom: 1px dashed #2c2f33; padding-bottom: 4px;">
+                  <div style="text-align: left; max-width: 65%;">
+                    <div class="has-text-white has-text-weight-bold" style="font-size: 0.75rem; word-break: break-all;">${name}</div>
+                    <div class="has-text-grey-light" style="font-size: 0.65rem;">${dateStr}</div>
+                  </div>
+                  <div class="has-text-danger has-text-weight-bold" style="font-size: 0.75rem;">-£${amountAbs}</div>
+                </div>
+              `;
+            });
+          }
+        }
       }
     }
 
