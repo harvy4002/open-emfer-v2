@@ -338,6 +338,40 @@ def test_lazy_reset_4am_cutoff():
     assert totals_after["last_reset_date"] == "2026-07-15"
 
 
+def test_step_baseline_self_healing():
+    """Verify that if cumulative_steps is smaller than steps_baseline, baseline is healed to 0."""
+    user_id = "cha"
+    agg_key = f"camper#aggregates#{user_id}"
+    dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+    
+    # Set up: baseline is 10000 steps
+    user_totals = {
+        "user_id": user_id,
+        "steps_baseline": 10000,
+        "last_reset_date": "2026-07-17"
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # Device rebooted or reset: cumulative_steps is only 4000
+    device_state = {
+        "cumulative_steps": 4000,
+        "cumulative_distance_km": 2.5,
+        "location_history": []
+    }
+    sim_server.db_put_item(dev_key, "state", device_state)
+    
+    # Fetch history: should trigger self-healing, reset baseline to 0, and return 4000 steps
+    status, _, body = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status == 200
+    data = json.loads(body)
+    assert data["cumulative_steps"] == 4000  # daily steps are now 4000 instead of 0
+    
+    # Assert database aggregates are healed too
+    healed_totals = sim_server.db_get_item(agg_key, "totals")
+    assert healed_totals["steps_baseline"] == 0
+
+
+
 
 
 

@@ -553,6 +553,13 @@ def process_api_get(path, query_params):
         user_totals = db_get_item(user_key, "totals") or {}
         baseline_steps = int(user_totals.get("steps_baseline", 0))
         total_steps = int(device_state.get("cumulative_steps", 0))
+        
+        # Self-healing logic for device reboots/restarts (cumulative steps drops below daily baseline)
+        if total_steps < baseline_steps:
+            baseline_steps = 0
+            user_totals["steps_baseline"] = 0
+            db_put_item(user_key, "totals", user_totals)
+            
         daily_steps = max(0, total_steps - baseline_steps)
         
         baseline_dist = baseline_steps * 0.00063

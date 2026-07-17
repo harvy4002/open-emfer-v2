@@ -103,10 +103,10 @@ function initCharts() {
   tempChart = new Chart(tempCtx, {
     type: "line",
     data: {
-      labels: ["10m ago", "8m ago", "6m ago", "4m ago", "2m ago", "Now"],
+      labels: [],
       datasets: [{
-        label: "Campsite Temperature (°C)",
-        data: [20, 21, 22.5, 23.4, 24, 24.5],
+        label: "Campsite Temperature (°C) [Offline]",
+        data: [],
         borderColor: "#ff780a",
         backgroundColor: "rgba(255, 120, 10, 0.1)",
         tension: 0.3,
@@ -127,10 +127,10 @@ function initCharts() {
   noiseChart = new Chart(noiseCtx, {
     type: "bar",
     data: {
-      labels: ["10m ago", "8m ago", "6m ago", "4m ago", "2m ago", "Now"],
+      labels: [],
       datasets: [{
-        label: "Noise Amplitude (dB)",
-        data: [40, 42, 55, 60, 44, 45.2],
+        label: "Noise Amplitude (dB) [Offline]",
+        data: [],
         backgroundColor: "#5794f2",
         borderRadius: 4
       }]
@@ -149,15 +149,22 @@ function initCharts() {
 
 function updateCharts(tempHistory, noiseHistory) {
   if (activeUser !== "hvy" || !tempChart || !noiseChart) return;
-  
+
   if (tempHistory && tempHistory.length > 0) {
     tempChart.data.datasets[0].data = tempHistory.map(x => x.temp);
     tempChart.data.labels = tempHistory.map(x => new Date(x.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     tempChart.update();
+  } else {
+    tempChart.data.datasets[0].data = [];
+    tempChart.data.labels = [];
+    tempChart.update();
   }
-  
+
   if (noiseHistory && noiseHistory.length > 0) {
     noiseChart.data.datasets[0].data = noiseHistory;
+    noiseChart.update();
+  } else {
+    noiseChart.data.datasets[0].data = [];
     noiseChart.update();
   }
 }
@@ -198,14 +205,8 @@ async function fetchTelemetry() {
         const locationHistory = historyData.location_history || [];
 
         if (activeUser === "hvy") {
-          // Extract temperature readings from coordinates history
-          const tempHistory = locationHistory.slice(-6).map(pt => ({
-            temp: parseFloat((20 + (pt.lat % 5) + (pt.lng % 3)).toFixed(1)),
-            time: pt.time
-          }));
-          const noiseHistory = locationHistory.slice(-6).map(pt => parseFloat((40 + (pt.lat % 15) + (pt.lng % 10)).toFixed(1)));
-          
-          updateCharts(tempHistory, noiseHistory);
+          // Temperature and noise sensors are currently offline/not set up yet
+          updateCharts([], []);
           drawLocationTrail(locationHistory);
         }
       }
