@@ -371,6 +371,52 @@ def test_step_baseline_self_healing():
     assert healed_totals["steps_baseline"] == 0
 
 
+def test_steps_dual_interpretation():
+    """Verify that posting steps less than baseline is treated as daily, and >= baseline is treated as cumulative."""
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    agg_key = f"camper#aggregates#{user_id}"
+    dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+    
+    # 1. Base setup: baseline is 10000 steps
+    user_totals = {
+        "user_id": user_id,
+        "steps_baseline": 10000,
+        "last_reset_date": "2026-07-17"
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # 2. Case A: User walks 5000 steps today, and logs "5000" (less than baseline 10000)
+    # This should be interpreted as daily steps. Cumulative steps should become 10000 + 5000 = 15000.
+    payload_daily = {"user_id": user_id, "steps": 5000}
+    status, _, _ = sim_server.process_api_post("/steps", payload_daily, auth_key)
+    assert status == 201
+    
+    # Verify cumulative steps in state and aggregates
+    state = sim_server.db_get_item(dev_key, "state")
+    assert state["cumulative_steps"] == 15000
+    totals = sim_server.db_get_item(agg_key, "totals")
+    assert totals["all_time_cumulative_steps"] == 15000
+    
+    # Verify daily steps is exactly 5000
+    status_get, _, body = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status_get == 200
+    data = json.loads(body)
+    assert data["cumulative_steps"] == 5000
+    
+    # 3. Case B: User walks and manually logs cumulative "18000" (greater than baseline 10000)
+    # This should be interpreted as cumulative steps directly. Cumulative steps should become 18000.
+    payload_cum = {"user_id": user_id, "steps": 18000}
+    status, _, _ = sim_server.process_api_post("/steps", payload_cum, auth_key)
+    assert status == 201
+    
+    state_2 = sim_server.db_get_item(dev_key, "state")
+    assert state_2["cumulative_steps"] == 18000
+    totals_2 = sim_server.db_get_item(agg_key, "totals")
+    assert totals_2["all_time_cumulative_steps"] == 18000
+
+
+
 
 
 
