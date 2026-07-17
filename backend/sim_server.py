@@ -656,6 +656,69 @@ def process_api_get(path, query_params):
             "events_processed": processed_count,
             "playback_boundary": until
         }, indent=2)
+
+    elif path == "/rebuild-steps-one-off":
+        results = {}
+        for user_id in ["hvy", "cha", "ash"]:
+            events = db_query_events(user_id, datetime.now().isoformat() + "Z")
+            
+            cumulative_steps = 0
+            
+            # Find the maximum step count logged in any 'steps' event in history
+            for event in events:
+                etype = event.get("event_type")
+                payload = event.get("payload") or {}
+                if etype == "steps":
+                    raw_steps = int(payload.get("steps") or 0)
+                    if raw_steps > cumulative_steps:
+                        cumulative_steps = raw_steps
+            
+            # If cumulative steps is still 0, check if we had any 'sensecap' steps
+            if cumulative_steps == 0:
+                last_lat, last_lng = None, None
+                for event in events:
+                    etype = event.get("event_type")
+                    payload = event.get("payload") or {}
+                    if etype == "sensecap":
+                        lat = payload.get("latitude")
+                        lng = payload.get("longitude")
+                        if lat is not None and lng is not None:
+                            lat, lng = float(lat), float(lng)
+                            if last_lat is not None and last_lng is not None:
+                                if last_lat != lat or last_lng != lng:
+                                    cumulative_steps += 79
+                            else:
+                                cumulative_steps += 79
+                            last_lat, last_lng = lat, lng
+            
+            results[user_id] = {
+                "events_found": len(events),
+                "reconstructed_cumulative_steps": cumulative_steps
+            }
+            
+            # Update the user's aggregate total step count persistently
+            user_key = f"camper#aggregates#{user_id}"
+            user_totals = db_get_item(user_key, "totals")
+            if user_totals:
+                user_totals["all_time_cumulative_steps"] = cumulative_steps
+                db_put_item(user_key, "totals", user_totals)
+                
+            # Update the device state too
+            dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+            device_state = db_get_item(dev_key, "state")
+            if device_state:
+                device_state["cumulative_steps"] = cumulative_steps
+                device_state["cumulative_distance_km"] = cumulative_steps * 0.00063
+                db_put_item(dev_key, "state", device_state)
+                
+            # Update combined standings
+            update_camper_steps_and_leaderboard(user_id, cumulative_steps)
+            
+        return 200, headers, json_dumps({
+            "status": "success",
+            "message": "Steps reconstructed from historical events",
+            "results": results
+        }, indent=2)
         
     return 404, headers, "Not Found"
 
