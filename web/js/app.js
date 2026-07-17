@@ -555,25 +555,27 @@ function loadStatusImage(resolvedFileKeyword) {
   const imgEl = document.getElementById("camper-status-image");
   if (!imgEl) return;
 
-  const jpgSrc = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.jpg`;
-  const pngSrc = `${activeUser}_status/${activeUser}_${resolvedFileKeyword}.png`;
-  const fallbackSrc = `${activeUser}_status/${activeUser}_normal.jpg`;
+  const baseDir = `${activeUser}_status`;
+  const fallbacks = [
+    `${baseDir}/${activeUser}_${resolvedFileKeyword}.jpg`,
+    `${baseDir}/${activeUser}_${resolvedFileKeyword}.png`,
+    `${baseDir}/${activeUser}_normal.jpg`,
+    `${baseDir}/${activeUser}_normal.png`,
+    `hvy_status/hvy_normal.jpg`
+  ];
+
+  let attemptIndex = 0;
 
   imgEl.onerror = function() {
-    // If the .jpg version failed (even if it's the normal/fallback image), try the .png version
-    if (this.src.endsWith(".jpg")) {
-      this.src = pngSrc;
-    } else if (this.src.endsWith(".png")) {
-      // If the .png version also failed, fall back to the active user's standard normal status image (.jpg)
-      this.src = fallbackSrc;
+    attemptIndex++;
+    if (attemptIndex < fallbacks.length) {
+      this.src = fallbacks[attemptIndex];
     } else {
-      // Prevent infinite loops if both .jpg and .png of both keyword and fallback fail
-      this.onerror = null;
-      this.src = "hvy_status/hvy_normal.jpg";
+      this.onerror = null; // Prevent any further errors or infinite loops
     }
   };
 
-  imgEl.src = jpgSrc;
+  imgEl.src = fallbacks[attemptIndex];
 }
 
 // Render a detailed drinks breakdown on the public dashboard (FR-004 / FR-005 / FR-006)

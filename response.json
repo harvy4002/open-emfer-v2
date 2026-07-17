@@ -1,0 +1,1 @@
+{"statusCode": 200, "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization, TRACKER_KEY, tracker_key"}, "body": "{\n  \"status\": \"normal\",\n  \"user_id\": \"hvy\",\n  \"last_updated\": \"2026-07-14T21:59:49.993291Z\"\n}"}

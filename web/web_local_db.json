@@ -1,0 +1,167 @@
+{
+  "camper#aggregates#combined": {
+    "totals": {
+      "user_id": "combined",
+      "total_drinks": 2,
+      "beer_drinks": 1,
+      "categories": {
+        "Water": 0,
+        "Coffee": 1,
+        "Tea": 0,
+        "Soft": 0,
+        "Lager": 1,
+        "IPA": 0,
+        "Cider": 0,
+        "Ale": 0,
+        "Stout": 0,
+        "Porter": 0,
+        "Spirits": 0,
+        "Martini": 0,
+        "G+T": 0,
+        "Negroni": 0,
+        "Port": 0,
+        "toilet_visits": 0,
+        "Pee": 0,
+        "Poo": 0,
+        "ToiletVisit": 1,
+        "Start": 1
+      },
+      "leaderboard": [
+        {
+          "user_id": "cha",
+          "display_name": "Cha",
+          "total_drinks": 2
+        }
+      ],
+      "event": "camper#aggregates#combined",
+      "type": "totals"
+    }
+  },
+  "monzo#transactions": {
+    "latest": {
+      "total_expenditure_gbp": 0.0,
+      "transactions": []
+    }
+  },
+  "camper#events#cha": {
+    "event#2026-07-14T20:10:06.024858Z#d7cc0648": {
+      "event_id": "c04e90bf-000f-4e30-98b7-5b5496879a6a",
+      "user_id": "cha",
+      "event_type": "Drinks",
+      "payload": {
+        "user_id": "cha",
+        "event": "Drinks",
+        "type": "Coffee"
+      },
+      "timestamp": "2026-07-14T20:10:06.024858Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:10:06.024858Z#d7cc0648"
+    },
+    "event#2026-07-14T20:10:08.044335Z#18bc6eae": {
+      "event_id": "2e698a78-76eb-4e6b-baae-d85ab2bcdc93",
+      "user_id": "cha",
+      "event_type": "Drinks",
+      "payload": {
+        "user_id": "cha",
+        "event": "Drinks",
+        "type": "Lager",
+        "beer": true
+      },
+      "timestamp": "2026-07-14T20:10:08.044335Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:10:08.044335Z#18bc6eae"
+    },
+    "event#2026-07-14T20:29:28.866616Z#553623dc": {
+      "event_id": "bccd210c-cb52-4f71-ae46-765a511ce9a1",
+      "user_id": "cha",
+      "event_type": "Toilet",
+      "payload": {
+        "user_id": "cha",
+        "event": "Toilet",
+        "type": "ToiletVisit"
+      },
+      "timestamp": "2026-07-14T20:29:28.866616Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:29:28.866616Z#553623dc"
+    },
+    "event#2026-07-14T20:29:32.510350Z#1a5bfefa": {
+      "event_id": "543abcaf-dfdb-4c15-a51d-241bee416fd8",
+      "user_id": "cha",
+      "event_type": "status",
+      "payload": {
+        "user_id": "cha",
+        "event": "status",
+        "status": "Sleeping"
+      },
+      "timestamp": "2026-07-14T20:29:32.510350Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:29:32.510350Z#1a5bfefa"
+    },
+    "event#2026-07-14T20:48:20.100821Z#fab2a041": {
+      "event_id": "1965b185-9003-4fc6-a5fc-97a12b77c2c1",
+      "user_id": "cha",
+      "event_type": "Status",
+      "payload": {
+        "user_id": "cha",
+        "event": "Status",
+        "type": "Sleeping"
+      },
+      "timestamp": "2026-07-14T20:48:20.100821Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:48:20.100821Z#fab2a041"
+    },
+    "event#2026-07-14T20:48:24.307123Z#b803fad3": {
+      "event_id": "c3aa4d3e-18d3-4e3d-8ce9-275793cf9506",
+      "user_id": "cha",
+      "event_type": "Lecture",
+      "payload": {
+        "user_id": "cha",
+        "event": "Lecture",
+        "type": "Start"
+      },
+      "timestamp": "2026-07-14T20:48:24.307123Z",
+      "event": "camper#events#cha",
+      "type": "event#2026-07-14T20:48:24.307123Z#b803fad3"
+    }
+  },
+  "camper#aggregates#cha": {
+    "totals": {
+      "user_id": "cha",
+      "total_drinks": 2,
+      "beer_drinks": 1,
+      "categories": {
+        "Coffee": 1,
+        "Lager": 1,
+        "ToiletVisit": 1,
+        "Start": 1
+      },
+      "event": "camper#aggregates#cha",
+      "type": "totals"
+    }
+  },
+  "camper#events#hvy": {
+    "event#2026-07-14T22:39:55.501229Z#97392128": {
+      "event_id": "2985e113-c2af-4cdb-ae10-67857aa14953",
+      "user_id": "hvy",
+      "event_type": "Status",
+      "payload": {
+        "user_id": "hvy",
+        "event": "Status",
+        "type": "Eating"
+      },
+      "timestamp": "2026-07-14T22:39:55.501229Z",
+      "event": "camper#events#hvy",
+      "type": "event#2026-07-14T22:39:55.501229Z#97392128"
+    }
+  },
+  "camper#aggregates#hvy": {
+    "totals": {
+      "user_id": "hvy",
+      "total_drinks": 0,
+      "beer_drinks": 0,
+      "categories": {},
+      "event": "camper#aggregates#hvy",
+      "type": "totals"
+    }
+  }
+}
