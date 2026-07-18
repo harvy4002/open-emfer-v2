@@ -1176,18 +1176,12 @@ def process_api_post(path, payload, auth_header):
         entered_steps = int(payload.get("steps") or 0)
         timestamp = datetime.now().isoformat() + "Z"
 
-        # Resolve steps_baseline to auto-detect daily vs cumulative entries
+        # Treat the entered steps strictly as today's daily steps (like a smart watch).
+        # Cumulative steps is yesterday's baseline steps plus today's daily steps.
         user_key = f"camper#aggregates#{user_id}"
         user_totals = db_get_item(user_key, "totals") or {}
         baseline_steps = int(user_totals.get("steps_baseline", 0))
-
-        # Self-healing dual interpretation:
-        # If entered steps are less than baseline, treat it as "daily steps walked today"
-        # and calculate the true cumulative steps dynamically to preserve yesterday's metrics!
-        if entered_steps < baseline_steps:
-            steps = baseline_steps + entered_steps
-        else:
-            steps = entered_steps
+        steps = baseline_steps + entered_steps
 
         # Append immutable event to event store (FR-001/FR-002)
         append_telemetry_event(user_id, "steps", payload)

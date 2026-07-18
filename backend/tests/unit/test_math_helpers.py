@@ -441,8 +441,8 @@ def test_step_baseline_self_healing():
     assert healed_totals["steps_baseline"] == 0
 
 
-def test_steps_dual_interpretation():
-    """Verify that posting steps less than baseline is treated as daily, and >= baseline is treated as cumulative."""
+def test_steps_daily_only():
+    """Verify that posting steps is strictly treated as daily, and cumulative steps becomes baseline + entered steps."""
     from datetime import datetime, timedelta
     eff_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
     
@@ -459,8 +459,8 @@ def test_steps_dual_interpretation():
     }
     sim_server.db_put_item(agg_key, "totals", user_totals)
     
-    # 2. Case A: User walks 5000 steps today, and logs "5000" (less than baseline 10000)
-    # This should be interpreted as daily steps. Cumulative steps should become 10000 + 5000 = 15000.
+    # 2. Case A: User logs 5000 steps walked today.
+    # Cumulative steps should become 10000 + 5000 = 15000.
     payload_daily = {"user_id": user_id, "steps": 5000}
     status, _, _ = sim_server.process_api_post("/steps", payload_daily, auth_key)
     assert status == 201
@@ -477,16 +477,16 @@ def test_steps_dual_interpretation():
     data = json.loads(body)
     assert data["cumulative_steps"] == 5000
     
-    # 3. Case B: User walks and manually logs cumulative "18000" (greater than baseline 10000)
-    # This should be interpreted as cumulative steps directly. Cumulative steps should become 18000.
+    # 3. Case B: User logs 18000 steps walked today.
+    # Cumulative steps should become 10000 + 18000 = 28000.
     payload_cum = {"user_id": user_id, "steps": 18000}
     status, _, _ = sim_server.process_api_post("/steps", payload_cum, auth_key)
     assert status == 201
     
     state_2 = sim_server.db_get_item(dev_key, "state")
-    assert state_2["cumulative_steps"] == 18000
+    assert state_2["cumulative_steps"] == 28000
     totals_2 = sim_server.db_get_item(agg_key, "totals")
-    assert totals_2["all_time_cumulative_steps"] == 18000
+    assert totals_2["all_time_cumulative_steps"] == 28000
 
 
 def test_update_baseline_steps():
