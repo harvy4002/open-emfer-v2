@@ -178,13 +178,29 @@
               <button class="button is-small is-dark is-fullwidth touch-btn mb-2" id="toggle-baseline-btn" onclick="toggleBaselineForm()">Modify Previous Days Steps ⚙️</button>
               
               <div id="baseline-form-container" class="hidden box p-3 mt-2" style="background-color: #1a1c1e; border: 1px solid #2c2f33;">
-                <div class="field mb-3">
-                  <label class="label has-text-white is-size-7 mb-1">Steps Walked on Previous Days (Baseline)</label>
-                  <div class="control">
-                    <input class="input" type="number" id="manualBaselineInput" placeholder="e.g. 8453"/>
+                <p class="heading has-text-grey mb-3">Daily Step History Mapping</p>
+                <div id="daily-steps-list" class="mb-4">
+                  <!-- Rendered dynamically via JS -->
+                  <div class="has-text-grey is-size-7">No daily steps history found</div>
+                </div>
+                
+                <!-- Add or Override Specific Date Form -->
+                <div style="border-top: 1px solid #2c2f33; padding-top: 12px;">
+                  <p class="heading has-text-grey mb-2">Add or Override Specific Date</p>
+                  <div class="field mb-2">
+                    <div class="control">
+                      <input class="input is-small" type="date" id="new-baseline-date"/>
+                    </div>
+                  </div>
+                  <div class="field has-addons">
+                    <div class="control is-expanded">
+                      <input class="input is-small" type="number" id="new-baseline-steps" placeholder="Enter daily step count..."/>
+                    </div>
+                    <div class="control">
+                      <button class="button is-info is-small touch-btn" onclick="submitCustomDateSteps()">Save Date</button>
+                    </div>
                   </div>
                 </div>
-                <button class="button is-info is-fullwidth touch-btn" onclick="submitManualBaseline()">Update Baseline Steps</button>
               </div>
             </div>
           </div>

@@ -96,12 +96,6 @@ DEFAULT_DB = {
             },
             "leaderboard": []
         }
-    },
-    "monzo#transactions": {
-        "latest": {
-            "total_expenditure_gbp": 0.00,
-            "transactions": []
-        }
     }
 }
 
@@ -309,7 +303,12 @@ def trigger_lazy_reset(user_id, current_timestamp=None):
         all_time_drinks = int(user_totals.get("all_time_total_drinks", 0))
         all_time_steps = int(user_totals.get("all_time_cumulative_steps", 0))
         
-        # Reset active daily totals
+        # Reset active daily totals and save transitioning day to history
+        history = user_totals.get("daily_steps_history") or {}
+        daily_today = max(0, all_time_steps - int(user_totals.get("steps_baseline", 0)))
+        if last_reset:
+            history[last_reset] = daily_today
+
         user_totals["categories"] = {}
         user_totals["total_drinks"] = 0
         user_totals["beer_drinks"] = 0
@@ -318,6 +317,7 @@ def trigger_lazy_reset(user_id, current_timestamp=None):
         user_totals["last_reset_date"] = current_date
         user_totals["all_time_total_drinks"] = all_time_drinks
         user_totals["all_time_cumulative_steps"] = all_time_steps
+        user_totals["daily_steps_history"] = history
         
         db_put_item(user_key, "totals", user_totals)
 
@@ -628,21 +628,31 @@ def process_api_get(path, query_params):
             "location_history": safe_history
         }, indent=2)
         
-    elif path == "/monzo":
-        monzo_state = db_get_item("monzo#transactions", "latest") or {
-            "total_expenditure_gbp": 0.00,
-            "transactions": []
+    elif path == "/expenditure":
+        user_id = query_params.get("user_id") or "hvy"
+        user_key = f"camper#aggregates#{user_id}"
+        user_totals = db_get_item(user_key, "totals") or {
+            "user_id": user_id,
+            "total_drinks": 0,
+            "beer_drinks": 0,
+            "categories": {},
+            "all_time_total_drinks": 0,
+            "all_time_cumulative_steps": 0,
+            "total_expenditure_gbp": 0.0,
+            "transactions": [],
+            "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
         }
         
         try:
-            exp = float(monzo_state.get("total_expenditure_gbp", 0.00))
+            exp = float(user_totals.get("total_expenditure_gbp", 0.00))
         except ValueError:
             exp = 0.0
             
         return 200, headers, json_dumps({
             "status": "success",
+            "user_id": user_id,
             "total_expenditure_gbp": exp,
-            "transactions": monzo_state.get("transactions", [])
+            "transactions": user_totals.get("transactions", [])
         }, indent=2)
         
     elif path == "/playback":
@@ -732,7 +742,7 @@ def process_api_post(path, payload, auth_header):
     expected_key = USER_KEYS.get(user_id, "mock-super-secret-key")
     
     # Token authorization check (Principle V)
-    if path in ["/beer", "/sensecap", "/browan", "/monzo-sync-simulation", "/steps", "/push-subscribe"] and auth_header != expected_key:
+    if path in ["/beer", "/sensecap", "/browan", "/expenditure", "/steps", "/push-subscribe"] and auth_header != expected_key:
         return 401, headers, json_dumps({
             "error": "Unauthorized",
             "message": "Invalid or missing tracker key"
@@ -932,12 +942,12 @@ def process_api_post(path, payload, auth_header):
             "user_id": user_id
         })
         
-    elif path == "/monzo-sync-simulation":
+    elif path == "/expenditure":
         user_id = payload.get("user_id") or "hvy"
         trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
         
         # Append immutable event to event store (FR-001/FR-002)
-        append_telemetry_event(user_id, "monzo", payload)
+        append_telemetry_event(user_id, "expenditure", payload)
         
         amount = float(payload.get("amount") or -5.00)
         desc = payload.get("merchant") or ""
@@ -945,42 +955,110 @@ def process_api_post(path, payload, auth_header):
             desc = f"£{abs(amount):.2f}"
         timestamp = datetime.now().isoformat() + "Z"
         
-        monzo_latest = db_get_item("monzo#transactions", "latest") or {
-            "total_expenditure_gbp": 0.00,
-            "transactions": []
+        user_key = f"camper#aggregates#{user_id}"
+        user_totals = db_get_item(user_key, "totals") or {
+            "user_id": user_id,
+            "total_drinks": 0,
+            "beer_drinks": 0,
+            "categories": {},
+            "all_time_total_drinks": 0,
+            "all_time_cumulative_steps": 0,
+            "total_expenditure_gbp": 0.0,
+            "transactions": [],
+            "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
         }
         
         try:
-            exp = float(monzo_latest.get("total_expenditure_gbp", 0.00))
+            exp = float(user_totals.get("total_expenditure_gbp", 0.00))
         except Exception:
             exp = 0.0
             
         tx_id = f"tx_local_{int(datetime.now().timestamp())}"
-        transactions = monzo_latest.get("transactions", [])
+        transactions = user_totals.get("transactions", [])
         transactions.append({
             "id": tx_id,
             "description": desc,
             "amount_gbp": amount,
             "timestamp": timestamp
         })
-        monzo_latest["transactions"] = transactions
+        user_totals["transactions"] = transactions
         
         if amount < 0:
-            monzo_latest["total_expenditure_gbp"] = exp + abs(amount)
+            user_totals["total_expenditure_gbp"] = exp + abs(amount)
             
-        db_put_item("monzo#transactions", "latest", monzo_latest)
+        db_put_item(user_key, "totals", user_totals)
         
         return 201, headers, json_dumps({
             "status": "success",
             "id": tx_id,
-            "total_expenditure_gbp": monzo_latest["total_expenditure_gbp"]
+            "total_expenditure_gbp": user_totals["total_expenditure_gbp"]
         })
 
     elif path == "/steps":
         user_id = payload.get("user_id") or "hvy"
         trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
         
-        # Check if user is updating baseline steps for previous days
+        # Check if user is updating a specific day's steps in the history map
+        if "date" in payload and "steps" in payload:
+            target_date = payload.get("date")
+            target_steps = int(payload.get("steps") or 0)
+            
+            user_key = f"camper#aggregates#{user_id}"
+            user_totals = db_get_item(user_key, "totals") or {
+                "user_id": user_id,
+                "total_drinks": 0,
+                "beer_drinks": 0,
+                "categories": {},
+                "all_time_total_drinks": 0,
+                "all_time_cumulative_steps": 0,
+                "last_reset_date": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+            }
+            
+            history = user_totals.get("daily_steps_history") or {}
+            history[target_date] = target_steps
+            user_totals["daily_steps_history"] = history
+            
+            # Recalculate baseline and cumulative steps
+            today_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+            
+            baseline_steps = 0
+            cumulative_steps = 0
+            for dt_str, st in history.items():
+                cumulative_steps += st
+                if dt_str < today_date:
+                    baseline_steps += st
+                    
+            user_totals["steps_baseline"] = baseline_steps
+            user_totals["all_time_cumulative_steps"] = cumulative_steps
+            db_put_item(user_key, "totals", user_totals)
+            
+            # Update device state too
+            dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+            device_state = db_get_item(dev_key, "state") or {
+                "last_known_latitude": 51.5074,
+                "last_known_longitude": -0.1278,
+                "last_known_timestamp": datetime.utcnow().isoformat() + "Z",
+                "cumulative_distance_km": 0.0,
+                "cumulative_steps": 0,
+                "location_history": []
+            }
+            device_state["cumulative_steps"] = cumulative_steps
+            device_state["cumulative_distance_km"] = cumulative_steps * 0.00063
+            db_put_item(dev_key, "state", device_state)
+            
+            # Update combined standings
+            update_camper_steps_and_leaderboard(user_id, cumulative_steps)
+            
+            return 201, headers, json_dumps({
+                "status": "success",
+                "message": f"Steps for date {target_date} updated successfully",
+                "user_id": user_id,
+                "daily_steps_history": history,
+                "all_time_cumulative_steps": cumulative_steps,
+                "steps_baseline": baseline_steps
+            })
+
+        # Backwards compatibility check if user is updating baseline steps for previous days
         if "baseline" in payload:
             baseline = int(payload.get("baseline") or 0)
             user_key = f"camper#aggregates#{user_id}"
@@ -1029,6 +1107,13 @@ def process_api_post(path, payload, auth_header):
         device_state["cumulative_distance_km"] = steps * 0.00063
 
         db_put_item(dev_key, "state", device_state)
+        
+        # Save today's steps in the daily steps history map
+        today_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+        history = user_totals.get("daily_steps_history") or {}
+        history[today_date] = max(0, steps - baseline_steps)
+        user_totals["daily_steps_history"] = history
+        db_put_item(user_key, "totals", user_totals)
         
         # Dual-write all-time steps aggregates and combined steps leaderboard (FR-003)
         update_camper_steps_and_leaderboard(user_id, steps)

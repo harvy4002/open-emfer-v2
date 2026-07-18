@@ -126,6 +126,36 @@ async function syncState() {
       const baseline = data.steps_baseline || 0;
       document.getElementById("display-steps").textContent = Number(steps).toLocaleString();
       document.getElementById("display-baseline").textContent = Number(baseline).toLocaleString();
+      
+      const historyMap = data.daily_steps_history || {};
+      const listEl = document.getElementById("daily-steps-list");
+      if (listEl) {
+        listEl.innerHTML = "";
+        const dates = Object.keys(historyMap).sort((a, b) => b.localeCompare(a)); // Sort descending (newest first)
+        if (dates.length === 0) {
+          listEl.innerHTML = `<div class="has-text-grey is-size-7">No daily steps history found</div>`;
+        } else {
+          dates.forEach(dt => {
+            const stepsCount = historyMap[dt] || 0;
+            listEl.innerHTML += `
+              <div class="mb-3" style="border-bottom: 1px dashed #2c2f33; padding-bottom: 8px;">
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                  <span class="has-text-white has-text-weight-bold" style="font-size: 0.8rem;">📅 ${dt}</span>
+                  <span class="has-text-success has-text-weight-bold" style="font-size: 0.8rem;">${Number(stepsCount).toLocaleString()} steps</span>
+                </div>
+                <div class="field has-addons">
+                  <div class="control is-expanded">
+                    <input class="input is-small" type="number" id="edit-steps-${dt}" value="${stepsCount}"/>
+                  </div>
+                  <div class="control">
+                    <button class="button is-warning is-small touch-btn" onclick="submitDaySteps('${dt}')">Modify</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        }
+      }
     }
   } catch (err) {
     console.error("Sync Error:", err);
@@ -263,15 +293,15 @@ function toggleBaselineForm() {
   }
 }
 
-async function submitManualBaseline() {
+async function submitDaySteps(dateStr) {
   if (submitLocked) return;
   if (!TRACKER_KEY) {
     showFlash("Error: Please provide a valid Tracker Key first", "error");
     return;
   }
-  const baselineInput = document.getElementById("manualBaselineInput");
-  const baselineVal = parseInt(baselineInput.value.trim(), 10);
-  if (isNaN(baselineVal) || baselineVal < 0) {
+  const inputEl = document.getElementById(`edit-steps-${dateStr}`);
+  const stepsVal = parseInt(inputEl.value.trim(), 10);
+  if (isNaN(stepsVal) || stepsVal < 0) {
     showFlash("Please enter a valid positive steps value", "error");
     return;
   }
@@ -281,7 +311,8 @@ async function submitManualBaseline() {
 
   const payload = {
     user_id: activeUser,
-    baseline: baselineVal
+    date: dateStr,
+    steps: stepsVal
   };
 
   try {
@@ -295,11 +326,68 @@ async function submitManualBaseline() {
     });
 
     if (response.status === 200 || response.status === 201) {
-      showFlash(`Success: previous days steps updated to ${baselineVal.toLocaleString()}`, "success");
-      baselineInput.value = "";
-      // Hide form container again
-      document.getElementById("baseline-form-container").classList.add("hidden");
-      document.getElementById("toggle-baseline-btn").textContent = "Modify Previous Days Steps ⚙️";
+      showFlash(`Success: steps for ${dateStr} updated to ${stepsVal.toLocaleString()}`, "success");
+      await syncState();
+    } else {
+      const err = await response.json();
+      showFlash(`Failed: ${err.message || 'Server error'}`, "error");
+    }
+  } catch (error) {
+    console.error(error);
+    showFlash(`Error: Network offline or blocked`, "error");
+  } finally {
+    setTimeout(() => {
+      submitLocked = false;
+      document.querySelectorAll(".button.touch-btn").forEach(btn => btn.removeAttribute("disabled"));
+      syncState();
+    }, 500);
+  }
+}
+
+async function submitCustomDateSteps() {
+  if (submitLocked) return;
+  if (!TRACKER_KEY) {
+    showFlash("Error: Please provide a valid Tracker Key first", "error");
+    return;
+  }
+  const dateInput = document.getElementById("new-baseline-date");
+  const stepsInput = document.getElementById("new-baseline-steps");
+  
+  const dateVal = dateInput.value.trim();
+  const stepsVal = parseInt(stepsInput.value.trim(), 10);
+
+  if (!dateVal) {
+    showFlash("Please select a valid date", "error");
+    return;
+  }
+  if (isNaN(stepsVal) || stepsVal < 0) {
+    showFlash("Please enter a valid positive steps value", "error");
+    return;
+  }
+
+  submitLocked = true;
+  document.querySelectorAll(".button.touch-btn").forEach(btn => btn.setAttribute("disabled", "true"));
+
+  const payload = {
+    user_id: activeUser,
+    date: dateVal,
+    steps: stepsVal
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/steps`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": TRACKER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      showFlash(`Success: added steps for ${dateVal}`, "success");
+      dateInput.value = "";
+      stepsInput.value = "";
       await syncState();
     } else {
       const err = await response.json();
@@ -345,7 +433,7 @@ async function submitManualExpenditure() {
   };
 
   try {
-    const response = await fetch(`${API_BASE}/monzo-sync-simulation`, {
+    const response = await fetch(`${API_BASE}/expenditure`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

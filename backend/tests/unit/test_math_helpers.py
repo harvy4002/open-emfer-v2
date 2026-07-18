@@ -222,11 +222,11 @@ def test_manual_expenditure_logging():
         "amount": -5.50,
         "merchant": "Burger"
     }
-    status, _, body = sim_server.process_api_post("/monzo-sync-simulation", payload_item, auth_key)
+    status, _, body = sim_server.process_api_post("/expenditure", payload_item, auth_key)
     assert status == 201
     
     # Verify transaction list has the Burger
-    status_get, _, body_get = sim_server.process_api_get("/monzo", {"user_id": user_id})
+    status_get, _, body_get = sim_server.process_api_get("/expenditure", {"user_id": user_id})
     assert status_get == 200
     data = json.loads(body_get)
     burger_tx = [t for t in data["transactions"] if t["description"] == "Burger"]
@@ -239,11 +239,11 @@ def test_manual_expenditure_logging():
         "amount": -7.25,
         "merchant": ""
     }
-    status, _, body = sim_server.process_api_post("/monzo-sync-simulation", payload_no_item, auth_key)
+    status, _, body = sim_server.process_api_post("/expenditure", payload_no_item, auth_key)
     assert status == 201
     
     # Verify description defaults to formatted price "£7.25"
-    status_get_2, _, body_get_2 = sim_server.process_api_get("/monzo", {"user_id": user_id})
+    status_get_2, _, body_get_2 = sim_server.process_api_get("/expenditure", {"user_id": user_id})
     assert status_get_2 == 200
     data_2 = json.loads(body_get_2)
     price_tx = [t for t in data_2["transactions"] if t["description"] == "£7.25"]
@@ -444,6 +444,51 @@ def test_update_baseline_steps():
     # Verify DB update
     totals = sim_server.db_get_item(agg_key, "totals")
     assert totals["steps_baseline"] == 12500
+
+
+def test_steps_by_date_overrides():
+    """Verify that posting date and steps parameter to /steps updates that specific date's steps successfully."""
+    from datetime import datetime, timedelta
+    eff_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+    yesterday = (datetime.utcnow() - timedelta(days=1, hours=4)).strftime("%Y-%m-%d")
+    
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    agg_key = f"camper#aggregates#{user_id}"
+    dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
+    
+    # 1. Base setup: user has 10000 steps yesterday, and 5000 steps today
+    user_totals = {
+        "user_id": user_id,
+        "steps_baseline": 10000,
+        "all_time_cumulative_steps": 15000,
+        "last_reset_date": eff_date,
+        "daily_steps_history": {
+            yesterday: 10000,
+            eff_date: 5000
+        }
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # 2. Post a specific date override (update yesterday to 12000 steps)
+    payload = {
+        "user_id": user_id,
+        "date": yesterday,
+        "steps": 12000
+    }
+    status, _, body = sim_server.process_api_post("/steps", payload, auth_key)
+    assert status == 201
+    
+    # Verify aggregates are recalculated (baseline becomes 12000, cumulative becomes 12000 + 5000 = 17000)
+    totals = sim_server.db_get_item(agg_key, "totals")
+    assert totals["daily_steps_history"][yesterday] == 12000
+    assert totals["steps_baseline"] == 12000
+    assert totals["all_time_cumulative_steps"] == 17000
+    
+    # Verify device state is updated
+    state = sim_server.db_get_item(dev_key, "state")
+    assert state["cumulative_steps"] == 17000
+
 
 
 
