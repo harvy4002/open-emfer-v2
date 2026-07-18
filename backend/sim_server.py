@@ -732,25 +732,80 @@ def process_api_get(path, query_params):
                                 cumulative_steps += 79
                             last_lat, last_lng = lat, lng
             
+            # Reconstruct daily steps history chronologically
+            history_map = {}
+            current_baseline = 0
+            last_known_cumulative = 0
+            
+            sorted_events = sorted(events, key=lambda x: x.get("timestamp", ""))
+            
+            for event in sorted_events:
+                etype = event.get("event_type")
+                payload = event.get("payload") or {}
+                ts = event.get("timestamp")
+                if not ts:
+                    continue
+                
+                # Parse date using transition boundary
+                try:
+                    ts_str = ts.rstrip("Z")
+                    if "." in ts_str:
+                        dt = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S.%f")
+                    else:
+                        dt = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S")
+                except Exception:
+                    continue
+                
+                effective_dt = dt - timedelta(hours=4)
+                event_date = effective_dt.strftime("%Y-%m-%d")
+                
+                if etype == "steps":
+                    # Check for explicit date override in payload
+                    if "date" in payload and "steps" in payload:
+                        history_map[payload["date"]] = int(payload["steps"] or 0)
+                    else:
+                        raw_steps = int(payload.get("steps") or 0)
+                        if raw_steps > last_known_cumulative:
+                            last_known_cumulative = raw_steps
+                        
+                        history_map[event_date] = max(0, last_known_cumulative - current_baseline)
+                elif etype == "Reset" and payload.get("type") == "ResetDay":
+                    current_baseline = last_known_cumulative
+
             results[user_id] = {
                 "events_found": len(events),
-                "reconstructed_cumulative_steps": cumulative_steps
+                "reconstructed_cumulative_steps": cumulative_steps,
+                "reconstructed_daily_steps_history": history_map
             }
             
-            # Update the user's aggregate total step count persistently
+            # Update the user's aggregate total step count and history map persistently
             user_key = f"camper#aggregates#{user_id}"
-            user_totals = db_get_item(user_key, "totals")
-            if user_totals:
-                user_totals["all_time_cumulative_steps"] = cumulative_steps
-                db_put_item(user_key, "totals", user_totals)
+            user_totals = db_get_item(user_key, "totals") or {
+                "user_id": user_id,
+                "total_drinks": 0,
+                "beer_drinks": 0,
+                "categories": {},
+                "all_time_total_drinks": 0,
+                "all_time_cumulative_steps": 0,
+                "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
+            }
+            user_totals["all_time_cumulative_steps"] = cumulative_steps
+            user_totals["daily_steps_history"] = history_map
+            db_put_item(user_key, "totals", user_totals)
                 
             # Update the device state too
             dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
-            device_state = db_get_item(dev_key, "state")
-            if device_state:
-                device_state["cumulative_steps"] = cumulative_steps
-                device_state["cumulative_distance_km"] = cumulative_steps * 0.00063
-                db_put_item(dev_key, "state", device_state)
+            device_state = db_get_item(dev_key, "state") or {
+                "last_known_latitude": 51.5074,
+                "last_known_longitude": -0.1278,
+                "last_known_timestamp": datetime.utcnow().isoformat() + "Z",
+                "cumulative_distance_km": 0.0,
+                "cumulative_steps": 0,
+                "location_history": []
+            }
+            device_state["cumulative_steps"] = cumulative_steps
+            device_state["cumulative_distance_km"] = cumulative_steps * 0.00063
+            db_put_item(dev_key, "state", device_state)
                 
             # Update combined standings
             update_camper_steps_and_leaderboard(user_id, cumulative_steps)

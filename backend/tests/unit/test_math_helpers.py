@@ -584,6 +584,70 @@ def test_history_endpoint_daily_steps_history():
     assert data["daily_steps_history"]["2026-07-17"] == 1500
 
 
+def test_rebuild_steps_one_off_history_reconstruction():
+    """Verify that /rebuild-steps-one-off reconstructs cumulative steps and history map from events."""
+    user_id = "cha"
+    event_key = f"camper#events#{user_id}"
+    
+    # 1. Map events with custom timestamps into the database
+    sim_server.db_put_item(event_key, "event#2026-07-16T12:00:00.000Z#hash1", {
+        "event_id": "e1",
+        "user_id": user_id,
+        "event_type": "steps",
+        "payload": {"steps": 1000},
+        "timestamp": "2026-07-16T12:00:00.000Z"
+    })
+    sim_server.db_put_item(event_key, "event#2026-07-16T23:00:00.000Z#hash2", {
+        "event_id": "e2",
+        "user_id": user_id,
+        "event_type": "steps",
+        "payload": {"steps": 1500},
+        "timestamp": "2026-07-16T23:00:00.000Z"
+    })
+    sim_server.db_put_item(event_key, "event#2026-07-17T03:00:00.000Z#hash3", {  # 3:00 UTC is still 2026-07-16 calendar day after subtracting 4 hours
+        "event_id": "e3",
+        "user_id": user_id,
+        "event_type": "steps",
+        "payload": {"steps": 1800},
+        "timestamp": "2026-07-17T03:00:00.000Z"
+    })
+    sim_server.db_put_item(event_key, "event#2026-07-17T04:30:00.000Z#hash4", {  # This is after 4am, so it starts the new day 2026-07-17
+        "event_id": "e4",
+        "user_id": user_id,
+        "event_type": "Reset",
+        "payload": {"type": "ResetDay"},
+        "timestamp": "2026-07-17T04:30:00.000Z"
+    })
+    sim_server.db_put_item(event_key, "event#2026-07-17T12:00:00.000Z#hash5", {
+        "event_id": "e5",
+        "user_id": user_id,
+        "event_type": "steps",
+        "payload": {"steps": 3000},
+        "timestamp": "2026-07-17T12:00:00.000Z"
+    })
+
+    # 2. Trigger the rebuild endpoint
+    status, _, body = sim_server.process_api_get("/rebuild-steps-one-off", {})
+    assert status == 200
+    data = json.loads(body)
+    
+    # 3. Assert reconstructed values inside response
+    results = data["results"]["cha"]
+    assert results["reconstructed_cumulative_steps"] == 3000
+    
+    daily_history = results["reconstructed_daily_steps_history"]
+    # 2026-07-16: max cumulative reached was 1800, baseline 0 -> 1800 steps
+    assert daily_history["2026-07-16"] == 1800
+    # 2026-07-17: max cumulative 3000, baseline 1800 -> 1200 steps
+    assert daily_history["2026-07-17"] == 1200
+
+    # 4. Verify values are saved persistently in the database camper aggregates
+    user_totals = sim_server.db_get_item("camper#aggregates#cha", "totals")
+    assert user_totals["all_time_cumulative_steps"] == 3000
+    assert user_totals["daily_steps_history"]["2026-07-16"] == 1800
+    assert user_totals["daily_steps_history"]["2026-07-17"] == 1200
+
+
 
 
 
