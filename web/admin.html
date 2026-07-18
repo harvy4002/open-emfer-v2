@@ -145,11 +145,12 @@
       <div class="columns is-multiline">
         <div class="column is-12">
           <div class="box p-3 mb-2" style="background-color: #1f2226; border: 1px solid #2c2f33;">
-            <div class="level is-mobile mb-0">
+            <div class="level is-mobile mb-2">
               <div class="level-left">
                 <div>
                   <p class="heading has-text-grey mb-1" style="font-size: 0.75rem;">Active Steps Telemetry</p>
-                  <p class="title is-4 has-text-white"><span id="display-steps">0</span> steps</p>
+                  <p class="title is-4 has-text-white mb-1"><span id="display-steps">0</span> steps</p>
+                  <p class="is-size-7 has-text-grey">Previous days baseline: <span class="has-text-info has-text-weight-bold" id="display-baseline">0</span> steps</p>
                 </div>
               </div>
               <div class="level-right">
@@ -163,12 +164,27 @@
         <div class="column is-12" id="manual-steps-panel">
           <div class="box p-4 mb-2" style="background-color: #1f2226; border: 1px solid #2c2f33;">
             <label class="label">Manual Step Count Entry</label>
-            <div class="field has-addons">
+            <div class="field has-addons mb-3">
               <div class="control is-expanded">
                 <input class="input" type="number" id="manualStepsInput" placeholder="Enter cumulative step count..."/>
               </div>
               <div class="control">
                 <button class="button is-success touch-btn" onclick="submitManualSteps()">Update Steps</button>
+              </div>
+            </div>
+
+            <!-- Modify Previous Days Baseline Steps (Initially Hidden) -->
+            <div class="mt-4">
+              <button class="button is-small is-dark is-fullwidth touch-btn mb-2" id="toggle-baseline-btn" onclick="toggleBaselineForm()">Modify Previous Days Steps ⚙️</button>
+              
+              <div id="baseline-form-container" class="hidden box p-3 mt-2" style="background-color: #1a1c1e; border: 1px solid #2c2f33;">
+                <div class="field mb-3">
+                  <label class="label has-text-white is-size-7 mb-1">Steps Walked on Previous Days (Baseline)</label>
+                  <div class="control">
+                    <input class="input" type="number" id="manualBaselineInput" placeholder="e.g. 8453"/>
+                  </div>
+                </div>
+                <button class="button is-info is-fullwidth touch-btn" onclick="submitManualBaseline()">Update Baseline Steps</button>
               </div>
             </div>
           </div>

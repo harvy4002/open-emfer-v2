@@ -123,7 +123,9 @@ async function syncState() {
     if (resHistory.ok) {
       const data = await resHistory.json();
       const steps = data.cumulative_steps || 0;
+      const baseline = data.steps_baseline || 0;
       document.getElementById("display-steps").textContent = Number(steps).toLocaleString();
+      document.getElementById("display-baseline").textContent = Number(baseline).toLocaleString();
     }
   } catch (err) {
     console.error("Sync Error:", err);
@@ -245,6 +247,73 @@ async function submitManualSteps() {
     showFlash(`Error: Network offline or blocked`, "error");
   } finally {
     submitLocked = false;
+  }
+}
+
+function toggleBaselineForm() {
+  const container = document.getElementById("baseline-form-container");
+  const btn = document.getElementById("toggle-baseline-btn");
+  if (!container || !btn) return;
+  if (container.classList.contains("hidden")) {
+    container.classList.remove("hidden");
+    btn.textContent = "Hide Previous Days Settings ❌";
+  } else {
+    container.classList.add("hidden");
+    btn.textContent = "Modify Previous Days Steps ⚙️";
+  }
+}
+
+async function submitManualBaseline() {
+  if (submitLocked) return;
+  if (!TRACKER_KEY) {
+    showFlash("Error: Please provide a valid Tracker Key first", "error");
+    return;
+  }
+  const baselineInput = document.getElementById("manualBaselineInput");
+  const baselineVal = parseInt(baselineInput.value.trim(), 10);
+  if (isNaN(baselineVal) || baselineVal < 0) {
+    showFlash("Please enter a valid positive steps value", "error");
+    return;
+  }
+
+  submitLocked = true;
+  document.querySelectorAll(".button.touch-btn").forEach(btn => btn.setAttribute("disabled", "true"));
+
+  const payload = {
+    user_id: activeUser,
+    baseline: baselineVal
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/steps`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": TRACKER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      showFlash(`Success: previous days steps updated to ${baselineVal.toLocaleString()}`, "success");
+      baselineInput.value = "";
+      // Hide form container again
+      document.getElementById("baseline-form-container").classList.add("hidden");
+      document.getElementById("toggle-baseline-btn").textContent = "Modify Previous Days Steps ⚙️";
+      await syncState();
+    } else {
+      const err = await response.json();
+      showFlash(`Failed: ${err.message || 'Server error'}`, "error");
+    }
+  } catch (error) {
+    console.error(error);
+    showFlash(`Error: Network offline or blocked`, "error");
+  } finally {
+    setTimeout(() => {
+      submitLocked = false;
+      document.querySelectorAll(".button.touch-btn").forEach(btn => btn.removeAttribute("disabled"));
+      syncState();
+    }, 500);
   }
 }
 

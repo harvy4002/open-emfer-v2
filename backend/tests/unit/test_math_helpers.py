@@ -373,6 +373,9 @@ def test_step_baseline_self_healing():
 
 def test_steps_dual_interpretation():
     """Verify that posting steps less than baseline is treated as daily, and >= baseline is treated as cumulative."""
+    from datetime import datetime, timedelta
+    eff_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+    
     user_id = "cha"
     auth_key = sim_server.USER_KEYS.get(user_id)
     agg_key = f"camper#aggregates#{user_id}"
@@ -382,7 +385,7 @@ def test_steps_dual_interpretation():
     user_totals = {
         "user_id": user_id,
         "steps_baseline": 10000,
-        "last_reset_date": "2026-07-17"
+        "last_reset_date": eff_date
     }
     sim_server.db_put_item(agg_key, "totals", user_totals)
     
@@ -414,6 +417,34 @@ def test_steps_dual_interpretation():
     assert state_2["cumulative_steps"] == 18000
     totals_2 = sim_server.db_get_item(agg_key, "totals")
     assert totals_2["all_time_cumulative_steps"] == 18000
+
+
+def test_update_baseline_steps():
+    """Verify that posting a baseline parameter to /steps updates steps_baseline successfully."""
+    from datetime import datetime, timedelta
+    eff_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
+    
+    user_id = "cha"
+    auth_key = sim_server.USER_KEYS.get(user_id)
+    agg_key = f"camper#aggregates#{user_id}"
+    
+    # 1. Base setup: baseline is 10000 steps
+    user_totals = {
+        "user_id": user_id,
+        "steps_baseline": 10000,
+        "last_reset_date": eff_date
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+    
+    # 2. Post a baseline update to /steps
+    payload = {"user_id": user_id, "baseline": 12500}
+    status, _, body = sim_server.process_api_post("/steps", payload, auth_key)
+    assert status == 201
+    
+    # Verify DB update
+    totals = sim_server.db_get_item(agg_key, "totals")
+    assert totals["steps_baseline"] == 12500
+
 
 
 

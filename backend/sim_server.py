@@ -624,6 +624,7 @@ def process_api_get(path, query_params):
             "user_id": user_id,
             "cumulative_distance_km": dist,
             "cumulative_steps": daily_steps,
+            "steps_baseline": baseline_steps,
             "location_history": safe_history
         }, indent=2)
         
@@ -978,6 +979,22 @@ def process_api_post(path, payload, auth_header):
     elif path == "/steps":
         user_id = payload.get("user_id") or "hvy"
         trigger_lazy_reset(user_id) # Automated daily reset trigger (FR-001/FR-005)
+        
+        # Check if user is updating baseline steps for previous days
+        if "baseline" in payload:
+            baseline = int(payload.get("baseline") or 0)
+            user_key = f"camper#aggregates#{user_id}"
+            user_totals = db_get_item(user_key, "totals")
+            if user_totals:
+                user_totals["steps_baseline"] = baseline
+                db_put_item(user_key, "totals", user_totals)
+                
+            return 201, headers, json_dumps({
+                "status": "success",
+                "message": "Baseline steps updated successfully",
+                "user_id": user_id,
+                "baseline_steps": baseline
+            })
         
         entered_steps = int(payload.get("steps") or 0)
         timestamp = datetime.now().isoformat() + "Z"
