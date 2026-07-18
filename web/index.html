@@ -121,7 +121,7 @@
             <li>💩 <strong>Toilet Visits</strong> (pee and poo frequency charts)</li>
             <li>🚶 <strong>Physical Activity</strong> (cumulative walking steps and estimated distance)</li>
             <li>📈 <strong>Environmental data</strong> (ambient noise amplitude and local temperature)</li>
-            <li>💳 <strong>Monzo Budgets</strong> (live campfire expenditures and transactions)</li>
+            <li>💳 <strong>Personal Expenditure</strong> (live campsite expenditures and transactions)</li>
           </ul>
           <p class="has-text-grey has-text-centered mt-4">Select an active camper below to view their live telemetry dashboard:</p>
         </div>
@@ -225,12 +225,12 @@
           </div>
         </div>
 
-        <!-- Monzo Campaign expenses (FR-001) -->
-        <div class="column is-6-mobile is-12-tablet is-3-desktop" id="monzo-panel">
+        <!-- Personal Campaign expenses (FR-001) -->
+        <div class="column is-6-mobile is-12-tablet is-3-desktop" id="expenditure-panel">
           <div class="metric-card" style="display: flex; flex-direction: column; min-height: 180px;">
             <div class="metric-title">Campsite Expenditure</div>
             <div class="metric-value" style="color: #ff780a;" id="expenditure-counter">£0.00</div>
-            <div class="metric-sub mb-3">Monzo Campaign Balance</div>
+            <div class="metric-sub mb-3">Personal Camp Spend</div>
             
             <!-- Transactions List Container -->
             <div class="mt-2" style="flex-grow: 1; overflow-y: auto; max-height: 140px; border-top: 1px solid #2c2f33; padding-top: 8px;">
@@ -299,6 +299,21 @@
       </div>
     </div>
   </section>
+
+  <!-- Persistent Dark Footer with Contact Information (FR-011/FR-008) -->
+  <footer class="footer" style="background-color: #1f2226; border-top: 1px solid #2c2f33; padding: 2.5rem 1.5rem; color: #7b8084;">
+    <div class="content has-text-centered">
+      <p style="color: #d8d9da; font-size: 1.1rem; margin-bottom: 0.5rem;">
+        <strong>Interested in what you see?</strong>
+      </p>
+      <p style="color: #7b8084; font-size: 0.95rem; margin-bottom: 1.25rem;">
+        Get in touch to join us for the next EMF or to share your ideas and suggestions!
+      </p>
+      <p style="font-size: 1rem;">
+        📧 Email: <a href="mailto:harvinder@harvinderatwal.com" style="color: #ff780a; font-weight: bold; text-decoration: none; border-bottom: 1px dashed #ff780a;">harvinder@harvinderatwal.com</a>
+      </p>
+    </div>
+  </footer>
 
   <script src="/js/app.js"></script>
 </body>

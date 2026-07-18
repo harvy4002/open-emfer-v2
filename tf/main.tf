@@ -14,7 +14,7 @@ terraform {
     }
   }
 
-  # S3 Remote State Backend to sync state between your local machine and GitHub Actions (complying with Principle III)
+  # S3 Remote State Backend to sync state securely and support CI/CD pipeline deployments (complying with Principle III)
   backend "s3" {
     bucket  = "open-emfer-v2-production-tfstate-harvy"
     key     = "production/terraform.tfstate"

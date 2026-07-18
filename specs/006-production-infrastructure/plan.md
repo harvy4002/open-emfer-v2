@@ -48,9 +48,9 @@ This feature delivers the complete Infrastructure-as-Code (IaC) configuration to
 | :--- | :--- | :--- |
 | **I. Contract-First Development** | ✅ PASS | API Gateway routes strictly align with endpoints declared in `openapi.json`. |
 | **II. Serverless Simplicity** | ✅ PASS | Built on native pay-per-use AWS Lambda and API Gateway HTTP proxies (zero idle cost). |
-| **III. Infrastructure-as-Code** | ✅ PASS | Every single AWS resource is modeled and provisioned strictly via Terraform under `tf/`. |
+| **III. Infrastructure-as-Code** | ✅ PASS | Every single AWS resource is modeled and provisioned strictly via Terraform under `tf/` and applied strictly via the CI/CD pipeline. |
 | **IV. Safe Database Keys** | ✅ PASS | DynamoDB configuration defines Partition Key (`event`) and Sort Key (`type`) structures. |
-| **V. Zero-Trust Security** | ✅ PASS | IAM roles strictly block cross-privilege, and Secrets Manager stores all Monzo / gateway keys. |
+| **V. Zero-Trust Security** | ✅ PASS | IAM roles strictly block cross-privilege, and Secrets Manager stores all secure gateway keys. |
 | **VI. Automated Testing** | ✅ PASS | Pytest covers mock boto3 table writes; Terraform configurations are validated before push. |
 | **VII. Cost-Optimized Frontends**| ✅ PASS | S3 static hosting bucket fronted by CloudFront edge caches results in zero server run costs. |
 | **VIII. Fast Feedback Cycles** | ✅ PASS | Infrastructure includes simple outputs to easily map URLs and validation keys. |

@@ -67,7 +67,7 @@ function initUI() {
     // Show individual panels
     document.getElementById("camper-activity-panel").classList.remove("hidden");
     document.getElementById("steps-panel").classList.remove("hidden");
-    document.getElementById("monzo-panel").classList.remove("hidden");
+    document.getElementById("expenditure-panel").classList.remove("hidden");
     initCharts();
   } else if (activeUser === "combined") {
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
@@ -76,7 +76,7 @@ function initUI() {
     // Hide individual panels on combined view (US-combined UX requirements)
     document.getElementById("camper-activity-panel").classList.add("hidden");
     document.getElementById("steps-panel").classList.add("hidden");
-    document.getElementById("monzo-panel").classList.add("hidden");
+    document.getElementById("expenditure-panel").classList.add("hidden");
   } else {
     // Hide environmental panels and map overlay for other individual participants (cha, ash, tin)
     document.querySelectorAll(".env-panel").forEach(el => el.classList.add("hidden"));
@@ -85,7 +85,7 @@ function initUI() {
     // Show individual panels
     document.getElementById("camper-activity-panel").classList.remove("hidden");
     document.getElementById("steps-panel").classList.remove("hidden");
-    document.getElementById("monzo-panel").classList.remove("hidden");
+    document.getElementById("expenditure-panel").classList.remove("hidden");
   }
   
   syncNavUI();
@@ -226,8 +226,8 @@ async function fetchTelemetry() {
         loadStatusImage(resolvedFileKeyword);
       }
 
-      // 4. Fetch Monzo expenses
-      const resExpenses = await fetch(`${API_BASE}/monzo?user_id=${activeUser}&_=${Date.now()}`);
+      // 4. Fetch personal expenditure expenses
+      const resExpenses = await fetch(`${API_BASE}/expenditure?user_id=${activeUser}&_=${Date.now()}`);
       if (resExpenses.ok) {
         const expenseData = await resExpenses.json();
         document.getElementById("expenditure-counter").textContent = `£${Number(expenseData.total_expenditure_gbp || 0).toFixed(2)}`;

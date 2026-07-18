@@ -284,20 +284,42 @@
         }
       }
     },
-    "/monzo": {
+    "/expenditure": {
       "get": {
-        "summary": "Get Latest Monzo Transactions",
-        "description": "Retrieves the array of recently captured transactions directly from the cached bank balance logs in DynamoDB.",
-        "operationId": "getMonzoTransactions",
+        "summary": "Get Personal Expenditure",
+        "description": "Retrieves the array of recently logged expenditure transactions directly from the camper aggregates.",
+        "operationId": "getExpenditure",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique identifier of the camper profile."
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Array of recent transactions.",
+            "description": "Recent expenditures and transactions.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MonzoTransactionRecord"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "total_expenditure_gbp": {
+                      "type": "number"
+                    },
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ExpenditureRecord"
+                      }
+                    }
                   }
                 }
               }
@@ -550,34 +572,24 @@
         },
         "required": ["location", "lectures", "workshops", "raw_data_count", "gaming_seconds"]
       },
-      "MonzoTransactionRecord": {
+      "ExpenditureRecord": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "amount": {
-            "type": "integer"
-          },
-          "adjusted_amount": {
-            "type": "number"
-          },
-          "currency": {
-            "type": "string",
-            "example": "GBP"
-          },
           "description": {
             "type": "string"
           },
-          "created": {
+          "amount_gbp": {
+            "type": "number"
+          },
+          "timestamp": {
             "type": "string",
             "format": "date-time"
-          },
-          "category": {
-            "type": "string"
           }
         },
-        "required": ["id", "amount", "adjusted_amount", "currency", "description", "created", "category"]
+        "required": ["id", "description", "amount_gbp", "timestamp"]
       },
       "ChirpStackPayload": {
         "type": "object",

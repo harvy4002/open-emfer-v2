@@ -109,21 +109,21 @@
           </nav>
         </div>
 
-        <!-- Monzo Sync Ingestion -->
+        <!-- Personal Expenditure Ingestion -->
         <div class="column is-12-tablet is-4-desktop">
           <nav class="panel">
-            <p class="panel-heading">Monzo Bank Sync Cron (Simulated)</p>
+            <p class="panel-heading">Campsite Expenditure Logger</p>
             <div class="p-4">
               <div class="field">
                 <label class="label">Transaction Amount (GBP)</label>
-                <input class="input" type="number" step="any" id="monzoAmount" value="-4.50"/>
+                <input class="input" type="number" step="any" id="expenditureAmount" value="-4.50"/>
               </div>
               <div class="field">
                 <label class="label">Merchant/Description</label>
-                <input class="input" type="text" id="monzoDesc" value="EMF Camp Bar"/>
+                <input class="input" type="text" id="expenditureDesc" value="EMF Camp Bar"/>
               </div>
               <div style="height: 122px;"></div> <!-- Spacer -->
-              <button class="button is-link is-fullwidth" onclick="injectMonzo()">Simulate Cron Sync</button>
+              <button class="button is-link is-fullwidth" onclick="injectExpenditure()">Log Expenditure</button>
             </div>
           </nav>
         </div>

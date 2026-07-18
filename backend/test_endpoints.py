@@ -2,7 +2,7 @@
 """
 backend/test_endpoints.py
 Zero-dependency Integration Test for Open EMF Camper API Endpoints.
-Queries /beer, /history, and /monzo for all active dashboards to verify HTTP codes,
+Queries /beer, /history, and /expenditure for all active dashboards to verify HTTP codes,
 payload structure, and check for any live API errors.
 """
 
@@ -104,17 +104,17 @@ def test_camper_endpoints(base_url, camper_id):
             print(f"{RED}[FAIL]{RESET} -> JSON Parse/Validation: {e}")
             errors.append(f"/history JSON: {e} (Response: {body})")
 
-    # 3. Test /monzo endpoint
-    monzo_url = f"{base_url}/monzo?user_id={camper_id}"
-    print(f"GET {monzo_url} ... ", end="")
-    status, body, err = make_request(monzo_url)
+    # 3. Test /expenditure endpoint
+    expenditure_url = f"{base_url}/expenditure?user_id={camper_id}"
+    print(f"GET {expenditure_url} ... ", end="")
+    status, body, err = make_request(expenditure_url)
     
     if err:
         print(f"{RED}[FAIL]{RESET} -> {err}")
-        errors.append(f"/monzo: {err} (Response: {body})")
+        errors.append(f"/expenditure: {err} (Response: {body})")
     elif status != 200:
         print(f"{RED}[FAIL]{RESET} -> HTTP {status}")
-        errors.append(f"/monzo: HTTP {status} (Response: {body})")
+        errors.append(f"/expenditure: HTTP {status} (Response: {body})")
     else:
         try:
             data = json.loads(body)
@@ -127,7 +127,7 @@ def test_camper_endpoints(base_url, camper_id):
             print(f"{GREEN}[PASS]{RESET} (spend: £{data.get('total_expenditure_gbp'):.2f}, txs: {len(data.get('transactions', []))})")
         except Exception as e:
             print(f"{RED}[FAIL]{RESET} -> JSON Parse/Validation: {e}")
-            errors.append(f"/monzo JSON: {e} (Response: {body})")
+            errors.append(f"/expenditure JSON: {e} (Response: {body})")
 
     # 4. Test /playback endpoint (T009)
     playback_url = f"{base_url}/playback?user_id={camper_id}&until={datetime.now().isoformat()}Z"

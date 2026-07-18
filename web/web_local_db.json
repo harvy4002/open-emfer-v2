@@ -37,12 +37,6 @@
       "type": "totals"
     }
   },
-  "monzo#transactions": {
-    "latest": {
-      "total_expenditure_gbp": 0.0,
-      "transactions": []
-    }
-  },
   "camper#events#cha": {
     "event#2026-07-14T20:10:06.024858Z#d7cc0648": {
       "event_id": "c04e90bf-000f-4e30-98b7-5b5496879a6a",

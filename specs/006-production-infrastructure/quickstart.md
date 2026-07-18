@@ -16,17 +16,16 @@ terraform init
 
 ## 2. Planning and Deploying to AWS
 
-Perform a dry run to verify the resources to be created:
+All Terraform changes MUST go through the GitHub Actions deployment pipeline (`.github/workflows/deploy.yml`) on a push to `main` and MUST NEVER be run or applied directly from local developer environments.
+
+### Local Planning / Dry Run
+To safely verify the resources that would be created or modified by the pipeline, navigate to the `tf/` folder and run a dry-run plan locally:
 ```bash
 terraform plan
 ```
 
-Execute the live provisioning command. Confirm with `yes` when prompted:
-```bash
-terraform apply
-```
-
-Upon successful completion, Terraform will output your CloudFront CNAME values and SSL validation records.
+### Live Deployments (CI/CD Pipeline)
+Once your changes are verified and committed, push them to the `main` branch to trigger the automated GitHub Actions deployment. Local `terraform apply` executions are strictly prohibited to ensure environment consistency and state integrity.
 
 ---
 

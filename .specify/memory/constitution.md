@@ -1,9 +1,10 @@
 <!--
 ### Sync Impact Report
-- Version change: 1.1.0 → 1.2.0
-- List of modified principles: None renamed, added Principle VIII
-- Added sections:
-  - Principle VIII: Fast Feedback Cycles (Local Simulation & Manual API Triggering)
+- Version change: 1.2.0 → 1.3.0
+- List of modified principles:
+  - Principle III: Infrastructure-as-Code (Terraform Only)
+  - Principle V: Zero-Trust Security & Secrets Management
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/constitution-template.md (✅ updated/aligned)
@@ -25,7 +26,7 @@ Backend services MUST be built as lightweight, single-responsibility Python Lamb
 - Code must remain modular, readable, and strictly typed where possible.
 
 ### III. Infrastructure-as-Code (Terraform Only)
-Every infrastructure resource—including AWS Lambda functions, API Gateway v2 HTTP APIs, DynamoDB tables, IAM roles, S3 buckets, and Secrets Manager variables—MUST be modeled and provisioned strictly through Terraform (`tf/`). No manual infrastructure configuration is permitted in the AWS Console, ensuring 100% reproducible environments.
+Every infrastructure resource—including AWS Lambda functions, API Gateway v2 HTTP APIs, DynamoDB tables, IAM roles, S3 buckets, and Secrets Manager variables—MUST be modeled and provisioned strictly through Terraform (`tf/`). No manual infrastructure configuration is permitted in the AWS Console, ensuring 100% reproducible environments. Furthermore, all Terraform state modifications or production deployments MUST be applied strictly through the CI/CD deployment pipeline (e.g., GitHub Actions automated workflows) and MUST NEVER be run or applied directly from local developer environments.
 
 ### IV. Safe and Secure Database Modeling (DynamoDB Keys)
 Data modeling in DynamoDB must strictly use the single-table or composite-key pattern:
@@ -33,7 +34,7 @@ Data modeling in DynamoDB must strictly use the single-table or composite-key pa
 - Accumulators and history-tracking (such as coordinate sequences or cumulative steps) must maintain strict array sizing bounds (e.g. maximum of 20 coordinate entries) to optimize performance, cost, and payload size.
 
 ### V. Zero-Trust Security & Secrets Management
-Sensitive credentials, tokens, or API keys (such as Monzo OAuth credentials or device tracker keys) MUST NEVER be committed to version control or hardcoded in resource scripts.
+Sensitive credentials, tokens, or API keys (such as device tracker keys) MUST NEVER be committed to version control or hardcoded in resource scripts.
 - Private third-party secrets must reside exclusively in AWS Secrets Manager and be loaded dynamically at runtime.
 - Telemetry mutative operations (POST) must strictly authenticate incoming traffic against a secure header-based token (`tracker_key`).
 
@@ -81,4 +82,4 @@ The codebase and design configurations MUST facilitate an ultra-fast developer f
 
 This Constitution supersedes all standard development ad-hoc patterns. Any changes to core principles, tech stacks, or architectural rules require documentation, ratification by the project owner, and updating this file.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-10
+**Version**: 1.3.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-17

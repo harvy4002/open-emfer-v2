@@ -76,16 +76,16 @@ function injectBrowan() {
   sendSimRequest("/browan", payload);
 }
 
-function injectMonzo() {
-  const amount = parseFloat(document.getElementById("monzoAmount").value);
-  const merchant = document.getElementById("monzoDesc").value || "EMF Camp Bar";
+function injectExpenditure() {
+  const amount = parseFloat(document.getElementById("expenditureAmount").value);
+  const merchant = document.getElementById("expenditureDesc").value || "EMF Camp Bar";
 
   const payload = {
     amount: amount,
     merchant: merchant
   };
 
-  sendSimRequest("/monzo-sync-simulation", payload);
+  sendSimRequest("/expenditure", payload);
 }
 
 async function inject3HourTrail() {
