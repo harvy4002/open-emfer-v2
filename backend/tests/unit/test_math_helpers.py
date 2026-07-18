@@ -251,6 +251,76 @@ def test_manual_expenditure_logging():
     assert price_tx[0]["amount_gbp"] == -7.25
 
 
+def test_expenditure_migration():
+    """Verify that old monzo#transactions data is correctly migrated to camper#aggregates#hvy."""
+    # 1. Manually insert an old monzo transaction record into the DB
+    old_txs = [
+        {
+            "id": "tx_old_1",
+            "description": "Old Monzo Expense",
+            "amount_gbp": -15.50,
+            "timestamp": "2026-07-14T20:00:00Z"
+        }
+    ]
+    sim_server.db_put_item("monzo#transactions", "latest", {
+        "total_expenditure_gbp": 15.50,
+        "transactions": old_txs
+    })
+
+    # 2. Query /expenditure for 'hvy' and verify that it performs the migration
+    status, _, body = sim_server.process_api_get("/expenditure", {"user_id": "hvy"})
+    assert status == 200
+    data = json.loads(body)
+    assert data["total_expenditure_gbp"] == 15.50
+    assert len(data["transactions"]) == 1
+    assert data["transactions"][0]["id"] == "tx_old_1"
+    assert data["transactions"][0]["description"] == "Old Monzo Expense"
+
+    # 3. Assert that it is now persistently saved in hvy's aggregates
+    user_totals = sim_server.db_get_item("camper#aggregates#hvy", "totals")
+    assert user_totals["total_expenditure_gbp"] == 15.50
+    assert len(user_totals["transactions"]) == 1
+
+
+def test_expenditure_migration_one_off():
+    """Verify that one-off rebuild endpoint successfully triggers expenditure migration."""
+    # 1. Manually insert an old monzo transaction record into the DB
+    old_txs = [
+        {
+            "id": "tx_old_2",
+            "description": "Old Monzo Expense 2",
+            "amount_gbp": -25.00,
+            "timestamp": "2026-07-14T21:00:00Z"
+        }
+    ]
+    sim_server.db_put_item("monzo#transactions", "latest", {
+        "total_expenditure_gbp": 25.00,
+        "transactions": old_txs
+    })
+
+    # Also make sure there's a hvy aggregate totals record to migrate into
+    sim_server.db_put_item("camper#aggregates#hvy", "totals", {
+        "user_id": "hvy",
+        "total_drinks": 0,
+        "beer_drinks": 0,
+        "categories": {},
+        "all_time_total_drinks": 0,
+        "all_time_cumulative_steps": 0,
+        "total_expenditure_gbp": 0.0,
+        "transactions": [],
+        "last_reset_date": "2026-07-18"
+    })
+
+    # 2. Call the /rebuild-steps-one-off endpoint
+    status, _, body = sim_server.process_api_get("/rebuild-steps-one-off", {})
+    assert status == 200
+
+    # 3. Assert that it migrated persistently to hvy's aggregates
+    user_totals = sim_server.db_get_item("camper#aggregates#hvy", "totals")
+    assert user_totals["total_expenditure_gbp"] == 25.00
+    assert len(user_totals["transactions"]) == 1
+
+
 def test_classy_beverages_aggregation():
     """Verify that logging BoxPerry increments beer_drinks, while BoxWine increments total_drinks but NOT beer_drinks."""
     user_id = "cha"
@@ -488,6 +558,30 @@ def test_steps_by_date_overrides():
     # Verify device state is updated
     state = sim_server.db_get_item(dev_key, "state")
     assert state["cumulative_steps"] == 17000
+
+
+def test_history_endpoint_daily_steps_history():
+    """Verify that GET /history endpoint returns daily_steps_history correctly."""
+    user_id = "cha"
+    agg_key = f"camper#aggregates#{user_id}"
+    user_totals = {
+        "user_id": user_id,
+        "steps_baseline": 1000,
+        "all_time_cumulative_steps": 2500,
+        "daily_steps_history": {
+            "2026-07-16": 1000,
+            "2026-07-17": 1500
+        }
+    }
+    sim_server.db_put_item(agg_key, "totals", user_totals)
+
+    # Fetch history for this user
+    status, _, body = sim_server.process_api_get("/history", {"user_id": user_id})
+    assert status == 200
+    data = json.loads(body)
+    assert "daily_steps_history" in data
+    assert data["daily_steps_history"]["2026-07-16"] == 1000
+    assert data["daily_steps_history"]["2026-07-17"] == 1500
 
 
 

@@ -619,12 +619,15 @@ def process_api_get(path, query_params):
             except Exception:
                 pass
         
+        daily_steps_history = user_totals.get("daily_steps_history") or {}
+        
         return 200, headers, json_dumps({
             "status": "success",
             "user_id": user_id,
             "cumulative_distance_km": dist,
             "cumulative_steps": daily_steps,
             "steps_baseline": baseline_steps,
+            "daily_steps_history": daily_steps_history,
             "location_history": safe_history
         }, indent=2)
         
@@ -642,6 +645,18 @@ def process_api_get(path, query_params):
             "transactions": [],
             "last_reset_date": datetime.utcnow().isoformat().split("T")[0]
         }
+
+        # Dynamic live migration: check if 'hvy' has old global monzo#transactions to carry over
+        if user_id == "hvy" and (not user_totals.get("transactions") or float(user_totals.get("total_expenditure_gbp", 0.0)) == 0.0):
+            old_monzo = db_get_item("monzo#transactions", "latest")
+            if old_monzo:
+                old_exp = float(old_monzo.get("total_expenditure_gbp", 0.0))
+                old_txs = old_monzo.get("transactions", [])
+                if old_txs or old_exp > 0.0:
+                    user_totals["total_expenditure_gbp"] = old_exp
+                    user_totals["transactions"] = old_txs
+                    db_put_item(user_key, "totals", user_totals)
+                    print(f"[MIGRATION] Migrated {len(old_txs)} transactions and £{old_exp:.2f} expenditure to camper#aggregates#hvy")
         
         try:
             exp = float(user_totals.get("total_expenditure_gbp", 0.00))
@@ -669,6 +684,21 @@ def process_api_get(path, query_params):
         }, indent=2)
 
     elif path == "/rebuild-steps-one-off":
+        # One-off migration of old monzo#transactions for 'hvy'
+        old_monzo = db_get_item("monzo#transactions", "latest")
+        if old_monzo:
+            old_exp = float(old_monzo.get("total_expenditure_gbp", 0.0))
+            old_txs = old_monzo.get("transactions", [])
+            if old_txs or old_exp > 0.0:
+                hvy_totals = db_get_item("camper#aggregates#hvy", "totals")
+                if hvy_totals:
+                    # Only overwrite if currently empty or zero
+                    if not hvy_totals.get("transactions") or float(hvy_totals.get("total_expenditure_gbp", 0.0)) == 0.0:
+                        hvy_totals["total_expenditure_gbp"] = old_exp
+                        hvy_totals["transactions"] = old_txs
+                        db_put_item("camper#aggregates#hvy", "totals", hvy_totals)
+                        print(f"[MIGRATION-ONEOFF] Migrated {len(old_txs)} transactions to camper#aggregates#hvy")
+
         results = {}
         for user_id in ["hvy", "cha", "ash"]:
             events = db_query_events(user_id, datetime.now().isoformat() + "Z")
