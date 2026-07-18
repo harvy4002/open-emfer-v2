@@ -527,7 +527,7 @@ def test_steps_by_date_overrides():
     agg_key = f"camper#aggregates#{user_id}"
     dev_key = f"device#eui-70b3d57ed0051111#{user_id}"
     
-    # 1. Base setup: user has 10000 steps yesterday, and 5000 steps today
+    # 1. Base setup: user has 10000 steps yesterday, and 15000 steps today cumulative
     user_totals = {
         "user_id": user_id,
         "steps_baseline": 10000,
@@ -535,12 +535,12 @@ def test_steps_by_date_overrides():
         "last_reset_date": eff_date,
         "daily_steps_history": {
             yesterday: 10000,
-            eff_date: 5000
+            eff_date: 15000
         }
     }
     sim_server.db_put_item(agg_key, "totals", user_totals)
     
-    # 2. Post a specific date override (update yesterday to 12000 steps)
+    # 2. Post a specific date override (update yesterday to 12000 steps cumulative)
     payload = {
         "user_id": user_id,
         "date": yesterday,
@@ -552,6 +552,7 @@ def test_steps_by_date_overrides():
     # Verify aggregates are recalculated (baseline becomes 12000, cumulative becomes 12000 + 5000 = 17000)
     totals = sim_server.db_get_item(agg_key, "totals")
     assert totals["daily_steps_history"][yesterday] == 12000
+    assert totals["daily_steps_history"][eff_date] == 17000
     assert totals["steps_baseline"] == 12000
     assert totals["all_time_cumulative_steps"] == 17000
     
@@ -636,16 +637,16 @@ def test_rebuild_steps_one_off_history_reconstruction():
     assert results["reconstructed_cumulative_steps"] == 3000
     
     daily_history = results["reconstructed_daily_steps_history"]
-    # 2026-07-16: max cumulative reached was 1800, baseline 0 -> 1800 steps
+    # 2026-07-16: max cumulative reached was 1800 -> 1800 steps cumulative
     assert daily_history["2026-07-16"] == 1800
-    # 2026-07-17: max cumulative 3000, baseline 1800 -> 1200 steps
-    assert daily_history["2026-07-17"] == 1200
+    # 2026-07-17: max cumulative 3000 -> 3000 steps cumulative
+    assert daily_history["2026-07-17"] == 3000
 
     # 4. Verify values are saved persistently in the database camper aggregates
     user_totals = sim_server.db_get_item("camper#aggregates#cha", "totals")
     assert user_totals["all_time_cumulative_steps"] == 3000
     assert user_totals["daily_steps_history"]["2026-07-16"] == 1800
-    assert user_totals["daily_steps_history"]["2026-07-17"] == 1200
+    assert user_totals["daily_steps_history"]["2026-07-17"] == 3000
 
 
 

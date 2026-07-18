@@ -305,7 +305,7 @@ def trigger_lazy_reset(user_id, current_timestamp=None):
         
         # Reset active daily totals and save transitioning day to history
         history = user_totals.get("daily_steps_history") or {}
-        daily_today = max(0, all_time_steps - int(user_totals.get("steps_baseline", 0)))
+        daily_today = all_time_steps
         if last_reset:
             history[last_reset] = daily_today
 
@@ -768,7 +768,7 @@ def process_api_get(path, query_params):
                         if raw_steps > last_known_cumulative:
                             last_known_cumulative = raw_steps
                         
-                        history_map[event_date] = max(0, last_known_cumulative - current_baseline)
+                        history_map[event_date] = last_known_cumulative
                 elif etype == "Reset" and payload.get("type") == "ResetDay":
                     current_baseline = last_known_cumulative
 
@@ -1100,18 +1100,32 @@ def process_api_post(path, payload, auth_header):
             }
             
             history = user_totals.get("daily_steps_history") or {}
+            old_val = int(history.get(target_date) or 0)
+            diff = target_steps - old_val
+            
+            # Save new target steps
             history[target_date] = target_steps
+            
+            # Propagate the diff forward to all subsequent dates (FR-012)
+            for dt_str in list(history.keys()):
+                if dt_str > target_date:
+                    history[dt_str] = max(0, int(history[dt_str] or 0) + diff)
+            
             user_totals["daily_steps_history"] = history
             
             # Recalculate baseline and cumulative steps
             today_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
             
-            baseline_steps = 0
-            cumulative_steps = 0
-            for dt_str, st in history.items():
-                cumulative_steps += st
-                if dt_str < today_date:
-                    baseline_steps += st
+            cumulative_steps = int(history.get(today_date) or 0)
+            if not cumulative_steps:
+                cumulative_steps = max([v for v in history.values()] or [0])
+                
+            past_dates = [d for d in history.keys() if d < today_date]
+            if past_dates:
+                latest_past_date = max(past_dates)
+                baseline_steps = history[latest_past_date]
+            else:
+                baseline_steps = 0
                     
             user_totals["steps_baseline"] = baseline_steps
             user_totals["all_time_cumulative_steps"] = cumulative_steps
@@ -1196,7 +1210,7 @@ def process_api_post(path, payload, auth_header):
         # Save today's steps in the daily steps history map
         today_date = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d")
         history = user_totals.get("daily_steps_history") or {}
-        history[today_date] = max(0, steps - baseline_steps)
+        history[today_date] = steps
         user_totals["daily_steps_history"] = history
         db_put_item(user_key, "totals", user_totals)
         
