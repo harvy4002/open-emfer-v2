@@ -126,6 +126,10 @@ async function syncState() {
       const baseline = data.steps_baseline || 0;
       document.getElementById("display-steps").textContent = Number(steps).toLocaleString();
       document.getElementById("display-baseline").textContent = Number(baseline).toLocaleString();
+      const manualBaselineEl = document.getElementById("manual-display-baseline");
+      if (manualBaselineEl) {
+        manualBaselineEl.textContent = Number(baseline).toLocaleString();
+      }
       
       const historyMap = data.daily_steps_history || {};
       const listEl = document.getElementById("daily-steps-list");
